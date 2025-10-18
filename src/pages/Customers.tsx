@@ -34,31 +34,9 @@ export default function Customers() {
     address: "",
   });
 
+  // Fetch all customers when component mounts
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchCustomers = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("customers")
-        .select("*, bookings(count)")
-        .order("name");
-
-      if (!isMounted) return;
-
-      if (error) {
-        toast.error("Failed to fetch customers");
-      } else {
-        setCustomers(data || []);
-      }
-      setLoading(false);
-    };
-
     fetchCustomers();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const fetchCustomers = async () => {
@@ -76,6 +54,7 @@ export default function Customers() {
     setLoading(false);
   };
 
+  // Create or Update Customer
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -103,6 +82,7 @@ export default function Customers() {
     }
   };
 
+  // Edit existing customer
   const handleEdit = (customer: any) => {
     setEditingCustomer(customer);
     setFormData({
@@ -114,6 +94,7 @@ export default function Customers() {
     setOpen(true);
   };
 
+  // Delete customer — removes from DB + UI
   const handleDelete = async (id: string) => {
     if (
       !confirm(
@@ -122,21 +103,22 @@ export default function Customers() {
     )
       return;
 
-    // Optimistically update UI
+    // Optimistically remove from UI
     const oldCustomers = customers;
     setCustomers((prev) => prev.filter((c) => c.id !== id));
 
     const { error } = await supabase.from("customers").delete().eq("id", id);
 
     if (error) {
-      toast.error("Failed to delete customer");
-      // Restore old data if failed
+      toast.error("Failed to delete customer from database");
+      // Restore UI if deletion failed
       setCustomers(oldCustomers);
     } else {
       toast.success("Customer deleted successfully!");
     }
   };
 
+  // Reset the input form
   const resetForm = () => {
     setFormData({
       name: "",
@@ -320,4 +302,3 @@ export default function Customers() {
     </div>
   );
 }
-
