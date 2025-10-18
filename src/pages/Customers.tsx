@@ -23,7 +23,7 @@ import { Plus, Edit, Trash2, Phone, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Customers() {
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
@@ -35,7 +35,30 @@ export default function Customers() {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchCustomers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*, bookings(count)")
+        .order("name");
+
+      if (!isMounted) return;
+
+      if (error) {
+        toast.error("Failed to fetch customers");
+      } else {
+        setCustomers(data || []);
+      }
+      setLoading(false);
+    };
+
     fetchCustomers();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchCustomers = async () => {
@@ -92,15 +115,25 @@ export default function Customers() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this customer? This will also delete all their bookings.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this customer? This will also delete all their bookings."
+      )
+    )
+      return;
+
+    // Optimistically update UI
+    const oldCustomers = customers;
+    setCustomers((prev) => prev.filter((c) => c.id !== id));
 
     const { error } = await supabase.from("customers").delete().eq("id", id);
 
     if (error) {
       toast.error("Failed to delete customer");
+      // Restore old data if failed
+      setCustomers(oldCustomers);
     } else {
       toast.success("Customer deleted successfully!");
-      fetchCustomers();
     }
   };
 
@@ -126,7 +159,13 @@ export default function Customers() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Customers Management</h2>
-        <Dialog open={open} onOpenChange={(val) => { setOpen(val); if (!val) resetForm(); }}>
+        <Dialog
+          open={open}
+          onOpenChange={(val) => {
+            setOpen(val);
+            if (!val) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -190,7 +229,10 @@ export default function Customers() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { setOpen(false); resetForm(); }}
+                  onClick={() => {
+                    setOpen(false);
+                    resetForm();
+                  }}
                 >
                   Cancel
                 </Button>
@@ -223,7 +265,9 @@ export default function Customers() {
                 <TableBody>
                   {customers.map((customer: any) => (
                     <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {customer.name}
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-sm">
@@ -276,3 +320,4 @@ export default function Customers() {
     </div>
   );
 }
+
