@@ -17,6 +17,7 @@ export type Database = {
       bookings: {
         Row: {
           advance_paid: number
+          base_amount: number
           booking_status: string
           check_in_date: string
           check_out_date: string
@@ -28,12 +29,15 @@ export type Database = {
           payment_status: string
           pending_amount: number
           room_id: string
+          tax_amount: number
+          tax_percentage: number
           total_amount: number
           total_days: number
           updated_at: string
         }
         Insert: {
           advance_paid?: number
+          base_amount?: number
           booking_status?: string
           check_in_date: string
           check_out_date: string
@@ -45,12 +49,15 @@ export type Database = {
           payment_status?: string
           pending_amount: number
           room_id: string
+          tax_amount?: number
+          tax_percentage?: number
           total_amount: number
           total_days: number
           updated_at?: string
         }
         Update: {
           advance_paid?: number
+          base_amount?: number
           booking_status?: string
           check_in_date?: string
           check_out_date?: string
@@ -62,6 +69,8 @@ export type Database = {
           payment_status?: string
           pending_amount?: number
           room_id?: string
+          tax_amount?: number
+          tax_percentage?: number
           total_amount?: number
           total_days?: number
           updated_at?: string
