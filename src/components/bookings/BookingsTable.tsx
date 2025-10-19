@@ -19,6 +19,9 @@ interface Booking {
   check_in_date: string;
   check_out_date: string;
   total_days: number;
+  base_amount: number;
+  tax_percentage: number;
+  tax_amount: number;
   total_amount: number;
   advance_paid: number;
   pending_amount: number;
@@ -93,6 +96,8 @@ export function BookingsTable({ bookings, onUpdate }: BookingsTableProps) {
             <TableHead>Check-in</TableHead>
             <TableHead>Check-out</TableHead>
             <TableHead>Days</TableHead>
+            <TableHead>Base</TableHead>
+            <TableHead>Tax</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Advance</TableHead>
             <TableHead>Pending</TableHead>
@@ -119,7 +124,14 @@ export function BookingsTable({ bookings, onUpdate }: BookingsTableProps) {
               <TableCell>{format(new Date(booking.check_in_date), "MMM dd, yyyy")}</TableCell>
               <TableCell>{format(new Date(booking.check_out_date), "MMM dd, yyyy")}</TableCell>
               <TableCell>{booking.total_days}</TableCell>
-              <TableCell>₹{Number(booking.total_amount).toLocaleString()}</TableCell>
+              <TableCell>₹{Number(booking.base_amount).toLocaleString()}</TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  <div>₹{Number(booking.tax_amount).toLocaleString()}</div>
+                  <div className="text-muted-foreground">({booking.tax_percentage}%)</div>
+                </div>
+              </TableCell>
+              <TableCell className="font-medium">₹{Number(booking.total_amount).toLocaleString()}</TableCell>
               <TableCell>₹{Number(booking.advance_paid).toLocaleString()}</TableCell>
               <TableCell className="text-destructive font-medium">
                 ₹{Number(booking.pending_amount).toLocaleString()}

@@ -29,6 +29,7 @@ export default function NewBooking() {
     roomId: "",
     checkInDate: "",
     checkOutDate: "",
+    taxPercentage: "0",
     advancePaid: "0",
     notes: "",
     // New customer fields
@@ -53,17 +54,26 @@ export default function NewBooking() {
   };
 
   const calculateTotal = () => {
-    if (!formData.checkInDate || !formData.checkOutDate || !formData.roomId) return 0;
+    if (!formData.checkInDate || !formData.checkOutDate || !formData.roomId) {
+      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0, pendingAmount: 0 };
+    }
     
     const days = differenceInDays(
       new Date(formData.checkOutDate),
       new Date(formData.checkInDate)
     );
     
-    if (days <= 0) return 0;
+    if (days <= 0) {
+      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0, pendingAmount: 0 };
+    }
     
     const room = rooms.find((r: any) => r.id === formData.roomId);
-    return days * (room?.price_per_day || 0);
+    const baseAmount = days * (room?.price_per_day || 0);
+    const taxAmount = baseAmount * (Number(formData.taxPercentage) / 100);
+    const totalAmount = baseAmount + taxAmount;
+    const pendingAmount = totalAmount - Number(formData.advancePaid);
+    
+    return { days, baseAmount, taxAmount, totalAmount, pendingAmount };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,12 +100,7 @@ export default function NewBooking() {
         customerId = customerData.id;
       }
 
-      const days = differenceInDays(
-        new Date(formData.checkOutDate),
-        new Date(formData.checkInDate)
-      );
-
-      const totalAmount = calculateTotal();
+      const { days, baseAmount, taxAmount, totalAmount, pendingAmount } = calculateTotal();
 
       const { error } = await supabase.from("bookings").insert({
         customer_id: customerId,
@@ -103,9 +108,12 @@ export default function NewBooking() {
         check_in_date: formData.checkInDate,
         check_out_date: formData.checkOutDate,
         total_days: days,
+        base_amount: baseAmount,
+        tax_percentage: Number(formData.taxPercentage),
+        tax_amount: taxAmount,
         total_amount: totalAmount,
         advance_paid: Number(formData.advancePaid),
-        pending_amount: totalAmount - Number(formData.advancePaid),
+        pending_amount: pendingAmount,
         notes: formData.notes,
       });
 
@@ -266,18 +274,39 @@ export default function NewBooking() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="taxPercentage">Tax Percentage (%)</Label>
+                <Input
+                  id="taxPercentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={formData.taxPercentage}
+                  onChange={(e) =>
+                    setFormData({ ...formData, taxPercentage: e.target.value })
+                  }
+                />
+              </div>
+
               {formData.checkInDate && formData.checkOutDate && formData.roomId && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium">
-                    Total Days:{" "}
-                    {differenceInDays(
-                      new Date(formData.checkOutDate),
-                      new Date(formData.checkInDate)
-                    )}
-                  </p>
-                  <p className="text-lg font-bold mt-1">
-                    Total Amount: ₹{calculateTotal().toLocaleString()}
-                  </p>
+                <div className="p-4 bg-muted rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Total Days:</span>
+                    <span className="font-medium">{calculateTotal().days}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Base Amount:</span>
+                    <span className="font-medium">₹{calculateTotal().baseAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Tax ({formData.taxPercentage}%):</span>
+                    <span className="font-medium">₹{calculateTotal().taxAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="text-lg font-bold">Total Amount:</span>
+                    <span className="text-lg font-bold">₹{calculateTotal().totalAmount.toLocaleString()}</span>
+                  </div>
                 </div>
               )}
 

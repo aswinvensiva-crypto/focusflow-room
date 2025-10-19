@@ -30,6 +30,7 @@ export default function EditBooking() {
     roomNumber: "",
     checkInDate: "",
     checkOutDate: "",
+    taxPercentage: "0",
     totalAmount: "0",
     advancePaid: "0",
     bookingStatus: "",
@@ -70,6 +71,7 @@ export default function EditBooking() {
       roomNumber: data.room.room_number,
       checkInDate: data.check_in_date,
       checkOutDate: data.check_out_date,
+      taxPercentage: data.tax_percentage?.toString() || "0",
       totalAmount: data.total_amount.toString(),
       advancePaid: data.advance_paid.toString(),
       bookingStatus: data.booking_status,
@@ -87,6 +89,12 @@ export default function EditBooking() {
         new Date(formData.checkInDate)
       );
 
+      const room = rooms.find((r: any) => r.id === formData.roomId);
+      const baseAmount = days * (room?.price_per_day || 0);
+      const taxAmount = baseAmount * (Number(formData.taxPercentage) / 100);
+      const totalAmount = baseAmount + taxAmount;
+      const pendingAmount = totalAmount - Number(formData.advancePaid);
+
       const { error } = await supabase
         .from("bookings")
         .update({
@@ -94,8 +102,12 @@ export default function EditBooking() {
           check_in_date: formData.checkInDate,
           check_out_date: formData.checkOutDate,
           total_days: days,
-          total_amount: Number(formData.totalAmount),
+          base_amount: baseAmount,
+          tax_percentage: Number(formData.taxPercentage),
+          tax_amount: taxAmount,
+          total_amount: totalAmount,
           advance_paid: Number(formData.advancePaid),
+          pending_amount: pendingAmount,
           booking_status: formData.bookingStatus,
           notes: formData.notes,
         })
@@ -188,21 +200,22 @@ export default function EditBooking() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="taxPercentage">Tax Percentage (%)</Label>
+                <Input
+                  id="taxPercentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={formData.taxPercentage}
+                  onChange={(e) =>
+                    setFormData({ ...formData, taxPercentage: e.target.value })
+                  }
+                />
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="totalAmount">Total Amount *</Label>
-                  <Input
-                    id="totalAmount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.totalAmount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, totalAmount: e.target.value })
-                    }
-                    required
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="advancePaid">Advance Paid *</Label>
                   <Input
@@ -219,13 +232,29 @@ export default function EditBooking() {
                 </div>
               </div>
 
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-lg font-bold">
-                  Pending Amount: ₹
-                  {(
-                    Number(formData.totalAmount) - Number(formData.advancePaid)
-                  ).toLocaleString()}
-                </p>
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Base Amount:</span>
+                  <span className="font-medium">₹{formData.totalAmount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Tax ({formData.taxPercentage}%):</span>
+                  <span className="font-medium">
+                    ₹{(Number(formData.totalAmount) * Number(formData.taxPercentage) / 100).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2 border-t">
+                  <span className="text-lg font-bold">Total Amount:</span>
+                  <span className="text-lg font-bold">
+                    ₹{(Number(formData.totalAmount) * (1 + Number(formData.taxPercentage) / 100)).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2 border-t">
+                  <span className="text-lg font-bold text-destructive">Pending Amount:</span>
+                  <span className="text-lg font-bold text-destructive">
+                    ₹{(Number(formData.totalAmount) * (1 + Number(formData.taxPercentage) / 100) - Number(formData.advancePaid)).toLocaleString()}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-2">
