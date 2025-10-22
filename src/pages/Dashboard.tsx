@@ -6,7 +6,6 @@ import { Plus, Building2, Users, Calendar, DollarSign, Receipt } from "lucide-re
 import { useNavigate } from "react-router-dom";
 import { BookingsTable } from "@/components/bookings/BookingsTable";
 import { toast } from "sonner";
-import { startOfMonth, endOfMonth } from "date-fns";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -40,6 +39,23 @@ export default function Dashboard() {
 
       setBookings(bookingsData || []);
 
+      // Fetch current month expenses
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      
+      const { data: expensesData, error: expensesError } = await supabase
+        .from("expenses")
+        .select("amount")
+        .gte("expense_date", firstDayOfMonth)
+        .lte("expense_date", lastDayOfMonth);
+
+      if (expensesError) throw expensesError;
+
+      const monthlyExpenses = expensesData?.reduce(
+        (sum, e) => sum + Number(e.amount), 0
+      ) || 0;
+
       // Calculate stats
       const totalBookings = bookingsData?.length || 0;
       const activeBookings = bookingsData?.filter(
@@ -52,23 +68,6 @@ export default function Dashboard() {
       
       const pendingPayments = bookingsData?.reduce(
         (sum, b) => sum + Number(b.pending_amount), 0
-      ) || 0;
-
-      // Fetch monthly expenses
-      const currentDate = new Date();
-      const monthStart = startOfMonth(currentDate).toISOString().split('T')[0];
-      const monthEnd = endOfMonth(currentDate).toISOString().split('T')[0];
-
-      const { data: expensesData, error: expensesError } = await supabase
-        .from("expenses")
-        .select("amount")
-        .gte("expense_date", monthStart)
-        .lte("expense_date", monthEnd);
-
-      if (expensesError) throw expensesError;
-
-      const monthlyExpenses = expensesData?.reduce(
-        (sum, e) => sum + Number(e.amount), 0
       ) || 0;
 
       setStats({
@@ -104,7 +103,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
