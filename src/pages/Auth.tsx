@@ -60,8 +60,8 @@ export default function Auth() {
               <Building2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">RoomFocus</CardTitle>
-          <CardDescription>Employee Room Booking Management</CardDescription>
+          <CardTitle className="text-2xl font-bold">le Hues</CardTitle>
+          <CardDescription>Gestion de Réservations et Dépenses</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

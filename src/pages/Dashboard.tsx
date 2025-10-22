@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Users, Calendar, DollarSign } from "lucide-react";
+import { Plus, Building2, Users, Calendar, DollarSign, Receipt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BookingsTable } from "@/components/bookings/BookingsTable";
 import { toast } from "sonner";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Dashboard() {
     activeBookings: 0,
     totalRevenue: 0,
     pendingPayments: 0,
+    monthlyExpenses: 0,
   });
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,11 +54,29 @@ export default function Dashboard() {
         (sum, b) => sum + Number(b.pending_amount), 0
       ) || 0;
 
+      // Fetch monthly expenses
+      const currentDate = new Date();
+      const monthStart = startOfMonth(currentDate).toISOString().split('T')[0];
+      const monthEnd = endOfMonth(currentDate).toISOString().split('T')[0];
+
+      const { data: expensesData, error: expensesError } = await supabase
+        .from("expenses")
+        .select("amount")
+        .gte("expense_date", monthStart)
+        .lte("expense_date", monthEnd);
+
+      if (expensesError) throw expensesError;
+
+      const monthlyExpenses = expensesData?.reduce(
+        (sum, e) => sum + Number(e.amount), 0
+      ) || 0;
+
       setStats({
         totalBookings,
         activeBookings,
         totalRevenue,
         pendingPayments,
+        monthlyExpenses,
       });
     } catch (error: any) {
       toast.error("Failed to fetch dashboard data");
@@ -84,7 +104,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -123,6 +143,18 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
               ₹{stats.pendingPayments.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              ₹{stats.monthlyExpenses.toLocaleString()}
             </div>
           </CardContent>
         </Card>

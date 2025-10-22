@@ -119,6 +119,42 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          expense_type: string
+          id: string
+          other_specification: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type: string
+          id?: string
+          other_specification?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type?: string
+          id?: string
+          other_specification?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           amenities: string[] | null

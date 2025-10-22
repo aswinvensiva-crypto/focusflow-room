@@ -12,6 +12,7 @@ import EditBooking from "./pages/EditBooking";
 import Calendar from "./pages/Calendar";
 import Rooms from "./pages/Rooms";
 import Customers from "./pages/Customers";
+import Expenses from "./pages/Expenses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Customers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses"
+              element={
+                <ProtectedRoute>
+                  <Expenses />
                 </ProtectedRoute>
               }
             />

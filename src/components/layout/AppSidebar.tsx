@@ -1,4 +1,4 @@
-import { Home, CalendarDays, Building2, Users, LogOut } from "lucide-react";
+import { Home, CalendarDays, Building2, Users, LogOut, Receipt } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -20,6 +20,7 @@ const menuItems = [
   { title: "Calendar", url: "/calendar", icon: CalendarDays },
   { title: "Rooms", url: "/rooms", icon: Building2 },
   { title: "Customers", url: "/customers", icon: Users },
+  { title: "Expenses", url: "/expenses", icon: Receipt },
 ];
 
 export function AppSidebar() {
@@ -30,7 +31,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>RoomFocus</SidebarGroupLabel>
+          <SidebarGroupLabel>le Hues</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
