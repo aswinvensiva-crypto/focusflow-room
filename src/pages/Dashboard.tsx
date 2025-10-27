@@ -15,6 +15,7 @@ export default function Dashboard() {
     totalRevenue: 0,
     pendingPayments: 0,
     monthlyExpenses: 0,
+    profit: 0,
   });
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,12 +71,15 @@ export default function Dashboard() {
         (sum, b) => sum + Number(b.pending_amount), 0
       ) || 0;
 
+      const profit = totalRevenue - monthlyExpenses;
+
       setStats({
         totalBookings,
         activeBookings,
         totalRevenue,
         pendingPayments,
         monthlyExpenses,
+        profit,
       });
     } catch (error: any) {
       toast.error("Failed to fetch dashboard data");
@@ -103,7 +107,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -154,6 +158,18 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
               ₹{stats.monthlyExpenses.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Profit</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ₹{stats.profit.toLocaleString()}
             </div>
           </CardContent>
         </Card>

@@ -33,6 +33,7 @@ export default function EditBooking() {
     taxPercentage: "0",
     totalAmount: "0",
     advancePaid: "0",
+    pendingPayment: "0",
     bookingStatus: "",
     notes: "",
   });
@@ -74,6 +75,7 @@ export default function EditBooking() {
       taxPercentage: data.tax_percentage?.toString() || "0",
       totalAmount: data.total_amount.toString(),
       advancePaid: data.advance_paid.toString(),
+      pendingPayment: "0",
       bookingStatus: data.booking_status,
       notes: data.notes || "",
     });
@@ -93,7 +95,8 @@ export default function EditBooking() {
       const baseAmount = days * (room?.price_per_day || 0);
       const taxAmount = baseAmount * (Number(formData.taxPercentage) / 100);
       const totalAmount = baseAmount + taxAmount;
-      const pendingAmount = totalAmount - Number(formData.advancePaid);
+      const totalAdvancePaid = Number(formData.advancePaid) + Number(formData.pendingPayment);
+      const pendingAmount = totalAmount - totalAdvancePaid;
 
       const { error } = await supabase
         .from("bookings")
@@ -106,7 +109,7 @@ export default function EditBooking() {
           tax_percentage: Number(formData.taxPercentage),
           tax_amount: taxAmount,
           total_amount: totalAmount,
-          advance_paid: Number(formData.advancePaid),
+          advance_paid: totalAdvancePaid,
           pending_amount: pendingAmount,
           booking_status: formData.bookingStatus,
           notes: formData.notes,
@@ -217,17 +220,26 @@ export default function EditBooking() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="advancePaid">Advance Paid *</Label>
+                  <Label htmlFor="advancePaid">Total Advance Paid</Label>
                   <Input
                     id="advancePaid"
                     type="number"
+                    value={formData.advancePaid}
+                    disabled
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPayment">Additional Payment</Label>
+                  <Input
+                    id="pendingPayment"
+                    type="number"
                     min="0"
                     step="0.01"
-                    value={formData.advancePaid}
+                    value={formData.pendingPayment}
                     onChange={(e) =>
-                      setFormData({ ...formData, advancePaid: e.target.value })
+                      setFormData({ ...formData, pendingPayment: e.target.value })
                     }
-                    required
+                    placeholder="Enter amount received"
                   />
                 </div>
               </div>
