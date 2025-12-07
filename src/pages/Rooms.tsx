@@ -21,12 +21,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function Rooms() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [roomRevenueData, setRoomRevenueData] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     roomNumber: "",
     roomName: "",
@@ -37,6 +39,7 @@ export default function Rooms() {
 
   useEffect(() => {
     fetchRooms();
+    fetchRoomRevenue();
   }, []);
 
   const fetchRooms = async () => {
@@ -49,6 +52,31 @@ export default function Rooms() {
       setRooms(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchRoomRevenue = async () => {
+    const { data: bookings, error } = await supabase
+      .from("bookings")
+      .select("room_id, total_amount, rooms(room_number, room_name)");
+
+    if (error) {
+      console.error("Failed to fetch room revenue", error);
+      return;
+    }
+
+    const revenueByRoom: Record<string, { name: string; revenue: number }> = {};
+    
+    bookings?.forEach((booking: any) => {
+      const roomId = booking.room_id;
+      const roomName = booking.rooms?.room_number || "Unknown";
+      if (!revenueByRoom[roomId]) {
+        revenueByRoom[roomId] = { name: roomName, revenue: 0 };
+      }
+      revenueByRoom[roomId].revenue += Number(booking.total_amount) || 0;
+    });
+
+    const chartData = Object.values(revenueByRoom).sort((a, b) => b.revenue - a.revenue);
+    setRoomRevenueData(chartData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,6 +177,28 @@ export default function Rooms() {
 
   return (
     <div className="space-y-6">
+      {/* Room Revenue Chart */}
+      {roomRevenueData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue by Room</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={roomRevenueData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]} />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Rooms Management</h2>
         <Dialog open={open} onOpenChange={(val) => { setOpen(val); if (!val) resetForm(); }}>
