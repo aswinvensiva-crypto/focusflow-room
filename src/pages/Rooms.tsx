@@ -21,14 +21,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function Rooms() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
-  const [roomRevenueData, setRoomRevenueData] = useState<any[]>([]);
+  const [roomRevenueMap, setRoomRevenueMap] = useState<Record<string, { revenue: number; monthlyData: { month: string; revenue: number }[] }>>({});
   const [formData, setFormData] = useState({
     roomNumber: "",
     roomName: "",
@@ -57,26 +57,35 @@ export default function Rooms() {
   const fetchRoomRevenue = async () => {
     const { data: bookings, error } = await supabase
       .from("bookings")
-      .select("room_id, total_amount, rooms(room_number, room_name)");
+      .select("room_id, total_amount, check_in_date");
 
     if (error) {
       console.error("Failed to fetch room revenue", error);
       return;
     }
 
-    const revenueByRoom: Record<string, { name: string; revenue: number }> = {};
+    const revenueByRoom: Record<string, { revenue: number; monthlyData: Record<string, number> }> = {};
     
     bookings?.forEach((booking: any) => {
       const roomId = booking.room_id;
-      const roomName = booking.rooms?.room_number || "Unknown";
+      const month = new Date(booking.check_in_date).toLocaleString('default', { month: 'short' });
+      
       if (!revenueByRoom[roomId]) {
-        revenueByRoom[roomId] = { name: roomName, revenue: 0 };
+        revenueByRoom[roomId] = { revenue: 0, monthlyData: {} };
       }
       revenueByRoom[roomId].revenue += Number(booking.total_amount) || 0;
+      revenueByRoom[roomId].monthlyData[month] = (revenueByRoom[roomId].monthlyData[month] || 0) + (Number(booking.total_amount) || 0);
     });
 
-    const chartData = Object.values(revenueByRoom).sort((a, b) => b.revenue - a.revenue);
-    setRoomRevenueData(chartData);
+    const formattedData: Record<string, { revenue: number; monthlyData: { month: string; revenue: number }[] }> = {};
+    Object.entries(revenueByRoom).forEach(([roomId, data]) => {
+      formattedData[roomId] = {
+        revenue: data.revenue,
+        monthlyData: Object.entries(data.monthlyData).map(([month, revenue]) => ({ month, revenue }))
+      };
+    });
+
+    setRoomRevenueMap(formattedData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,27 +186,6 @@ export default function Rooms() {
 
   return (
     <div className="space-y-6">
-      {/* Room Revenue Chart */}
-      {roomRevenueData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue by Room</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={roomRevenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]} />
-                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Rooms Management</h2>
@@ -308,9 +296,35 @@ export default function Rooms() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Capacity: {room.capacity} person(s)</p>
-                <p className="text-lg font-bold text-primary">₹{room.price_per_day}/day</p>
+              <div className="flex gap-4 items-center">
+                <div className="space-y-1 flex-1">
+                  <p className="text-sm text-muted-foreground">Capacity: {room.capacity} person(s)</p>
+                  <p className="text-lg font-bold text-primary">₹{room.price_per_day}/day</p>
+                  {roomRevenueMap[room.id] && (
+                    <p className="text-xs text-muted-foreground">
+                      Total Revenue: ₹{roomRevenueMap[room.id].revenue.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                {roomRevenueMap[room.id]?.monthlyData.length > 0 && (
+                  <div className="w-24 h-12">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={roomRevenueMap[room.id].monthlyData}>
+                        <Tooltip 
+                          formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
+                          contentStyle={{ fontSize: '10px', padding: '4px' }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="revenue" 
+                          stroke="hsl(var(--primary))" 
+                          fill="hsl(var(--primary) / 0.3)" 
+                          strokeWidth={1.5}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button
