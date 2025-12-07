@@ -9,8 +9,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { toast } from "sonner";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+
+const ROOM_COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "#8884d8",
+  "#82ca9d",
+  "#ffc658",
+  "#ff7300",
+  "#00C49F",
+];
 
 export default function Calendar() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -18,6 +41,7 @@ export default function Calendar() {
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -43,18 +67,54 @@ export default function Calendar() {
         query = query.eq("room_id", selectedRoom);
       }
 
-      const [bookingsResult, roomsResult] = await Promise.all([
+      const [bookingsResult, roomsResult, allBookingsResult] = await Promise.all([
         query,
         supabase.from("rooms").select("*"),
+        supabase.from("bookings").select("*, room:rooms(*)"),
       ]);
 
       if (bookingsResult.data) setBookings(bookingsResult.data);
       if (roomsResult.data) setRooms(roomsResult.data);
+
+      // Calculate monthly revenue data for the chart
+      if (allBookingsResult.data && roomsResult.data) {
+        const monthlyData = calculateMonthlyRevenueByRoom(allBookingsResult.data, roomsResult.data);
+        setMonthlyRevenueData(monthlyData);
+      }
     } catch (error: any) {
       toast.error("Failed to fetch calendar data");
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateMonthlyRevenueByRoom = (allBookings: any[], allRooms: any[]) => {
+    const monthsMap = new Map<string, any>();
+
+    // Get last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = format(date, "MMM yyyy");
+      const dataPoint: any = { month: format(date, "MMM") };
+      allRooms.forEach((room) => {
+        dataPoint[room.room_name] = 0;
+      });
+      monthsMap.set(monthKey, dataPoint);
+    }
+
+    // Aggregate revenue by room and month
+    allBookings.forEach((booking: any) => {
+      const bookingDate = new Date(booking.check_in_date);
+      const monthKey = format(bookingDate, "MMM yyyy");
+      const monthData = monthsMap.get(monthKey);
+      if (monthData && booking.room) {
+        monthData[booking.room.room_name] =
+          (monthData[booking.room.room_name] || 0) + Number(booking.total_amount);
+      }
+    });
+
+    return Array.from(monthsMap.values());
   };
 
   const getDaysInMonth = () => {
@@ -185,6 +245,44 @@ export default function Calendar() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Room Revenue Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Room Revenue Trends (Last 6 Months)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyRevenueData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="month" className="text-xs" />
+                <YAxis className="text-xs" tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(value: number) => [`₹${value.toLocaleString()}`, ""]}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Legend />
+                {rooms.map((room: any, index: number) => (
+                  <Area
+                    key={room.id}
+                    type="monotone"
+                    dataKey={room.room_name}
+                    stackId="1"
+                    stroke={ROOM_COLORS[index % ROOM_COLORS.length]}
+                    fill={ROOM_COLORS[index % ROOM_COLORS.length]}
+                    fillOpacity={0.6}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
