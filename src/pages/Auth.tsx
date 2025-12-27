@@ -52,34 +52,33 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Background orbs */}
+      <div className="orb orb-pink w-[500px] h-[500px] -top-40 -right-40 animate-glow" />
+      <div className="orb orb-orange w-[400px] h-[400px] -bottom-40 -left-40 animate-glow" style={{ animationDelay: '2s' }} />
+      <div className="orb orb-purple w-[300px] h-[300px] top-1/3 left-1/4 animate-glow" style={{ animationDelay: '1s' }} />
       
-      <Card className="w-full max-w-md relative z-10 border-border/50 shadow-medium">
-        <CardHeader className="space-y-4 text-center pb-8">
+      <Card className="w-full max-w-md relative z-10 border-border/30 bg-card/80 backdrop-blur-xl shadow-medium">
+        <CardHeader className="space-y-6 text-center pb-8">
           <div className="flex justify-center">
-            <div className="p-4 bg-gradient-to-br from-primary to-accent rounded-2xl shadow-glow">
-              <Building2 className="h-10 w-10 text-primary-foreground" />
+            <div className="p-5 bg-gradient-to-br from-primary to-accent rounded-2xl shadow-lg shadow-primary/30">
+              <Building2 className="h-12 w-12 text-white" />
             </div>
           </div>
           <div>
-            <CardTitle className="font-display text-3xl font-bold tracking-tight">le Hues</CardTitle>
-            <CardDescription className="text-muted-foreground mt-2">
+            <CardTitle className="font-display text-4xl font-bold tracking-tight text-iridescent">le Hues</CardTitle>
+            <CardDescription className="text-muted-foreground mt-2 text-base">
               Luxury Room Booking Management
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50">
-              <TabsTrigger value="signin" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/30 p-1 rounded-xl">
+              <TabsTrigger value="signin" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-lg">
                 Sign In
               </TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-lg">
                 Sign Up
               </TabsTrigger>
             </TabsList>
@@ -95,7 +94,6 @@ export default function Auth() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -106,7 +104,6 @@ export default function Auth() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
                 <Button type="submit" className="w-full h-12" variant="premium" disabled={loading}>
@@ -126,7 +123,6 @@ export default function Auth() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -138,7 +134,6 @@ export default function Auth() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
                 <Button type="submit" className="w-full h-12" variant="premium" disabled={loading}>
