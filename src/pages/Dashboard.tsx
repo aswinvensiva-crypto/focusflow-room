@@ -98,77 +98,92 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Dashboard</h2>
-        <Button onClick={() => navigate("/bookings/new")}>
-          <Plus className="mr-2 h-4 w-4" />
+        <div>
+          <h2 className="font-display text-4xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground mt-1">Welcome back to le Hues management</p>
+        </div>
+        <Button onClick={() => navigate("/bookings/new")} variant="premium" size="lg">
+          <Plus className="mr-2 h-5 w-5" />
           New Booking
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <Card>
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-6 stagger-children">
+        <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalBookings}</div>
+            <div className="text-3xl font-display font-bold">{stats.totalBookings}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Bookings</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-success" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeBookings}</div>
+            <div className="text-3xl font-display font-bold">{stats.activeBookings}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-accent" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-3xl font-display font-bold text-gradient">₹{stats.totalRevenue.toLocaleString()}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-destructive" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
+            <div className="text-3xl font-display font-bold text-destructive">
               ₹{stats.pendingPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Expenses</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+              <Receipt className="h-5 w-5 text-warning" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-3xl font-display font-bold text-warning">
               ₹{stats.monthlyExpenses.toLocaleString()}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
+            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${stats.profit >= 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
+              <DollarSign className={`h-5 w-5 ${stats.profit >= 0 ? 'text-success' : 'text-destructive'}`} />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-3xl font-display font-bold ${stats.profit >= 0 ? 'text-success' : 'text-destructive'}`}>
               ₹{stats.profit.toLocaleString()}
             </div>
           </CardContent>
@@ -176,10 +191,10 @@ export default function Dashboard() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Bookings</CardTitle>
+        <CardHeader className="border-b border-border/50">
+          <CardTitle className="font-display text-2xl">Recent Bookings</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <BookingsTable bookings={bookings} onUpdate={fetchDashboardData} />
         </CardContent>
       </Card>

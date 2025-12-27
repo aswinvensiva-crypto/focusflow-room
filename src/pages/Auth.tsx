@@ -52,68 +52,85 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-primary rounded-full">
-              <Building2 className="h-8 w-8 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+      
+      <Card className="w-full max-w-md relative z-10 border-border/50 shadow-medium">
+        <CardHeader className="space-y-4 text-center pb-8">
+          <div className="flex justify-center">
+            <div className="p-4 bg-gradient-to-br from-primary to-accent rounded-2xl shadow-glow">
+              <Building2 className="h-10 w-10 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">le Hues</CardTitle>
-          <CardDescription>Gestion de Réservations et Dépenses</CardDescription>
+          <div>
+            <CardTitle className="font-display text-3xl font-bold tracking-tight">le Hues</CardTitle>
+            <CardDescription className="text-muted-foreground mt-2">
+              Luxury Room Booking Management
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50">
+              <TabsTrigger value="signin" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Sign In
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Sign Up
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleSignIn} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
                   <Input
                     id="signin-email"
                     type="email"
-                    placeholder="employee@company.com"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label htmlFor="signin-password" className="text-sm font-medium">Password</Label>
                   <Input
                     id="signin-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-12" variant="premium" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
             </TabsContent>
             
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handleSignUp} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email" className="text-sm font-medium">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="employee@company.com"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password" className="text-sm font-medium">Password</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -121,9 +138,10 @@ export default function Auth() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
+                    className="h-12 rounded-lg border-border/50 focus:border-primary"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-12" variant="premium" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
