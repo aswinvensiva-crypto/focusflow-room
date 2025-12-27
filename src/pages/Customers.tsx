@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Phone, Mail, MapPin } from "lucide-react";
+import { Plus, Edit, Trash2, Phone, Mail, MapPin, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Customers() {
@@ -138,9 +138,12 @@ export default function Customers() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Customers Management</h2>
+        <div>
+          <h2 className="font-display text-4xl font-bold tracking-tight text-gradient">Customers</h2>
+          <p className="text-muted-foreground mt-1">Manage your guest database</p>
+        </div>
         <Dialog
           open={open}
           onOpenChange={(val) => {
@@ -149,20 +152,20 @@ export default function Customers() {
           }}
         >
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button variant="premium" size="lg">
+              <Plus className="mr-2 h-5 w-5" />
               Add Customer
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="border-border/30 bg-card/95 backdrop-blur-xl">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="font-display text-2xl text-gradient">
                 {editingCustomer ? "Edit Customer" : "Add New Customer"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name" className="text-sm font-medium">Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -173,7 +176,7 @@ export default function Customers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone *</Label>
+                <Label htmlFor="phone" className="text-sm font-medium">Phone *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -184,7 +187,7 @@ export default function Customers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -195,7 +198,7 @@ export default function Customers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address" className="text-sm font-medium">Address</Label>
                 <Input
                   id="address"
                   value={formData.address}
@@ -204,8 +207,8 @@ export default function Customers() {
                   }
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit">
+              <div className="flex gap-3 pt-2">
+                <Button type="submit" variant="premium">
                   {editingCustomer ? "Update" : "Create"}
                 </Button>
                 <Button
@@ -224,54 +227,63 @@ export default function Customers() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Customers</CardTitle>
+      <Card className="stat-card">
+        <CardHeader className="border-b border-border/30">
+          <CardTitle className="font-display text-2xl">All Customers</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {customers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No customers found. Add your first customer to get started.
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p>No customers found. Add your first customer to get started.</p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-xl border border-border/30 overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Total Bookings</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="border-border/30 bg-muted/30">
+                    <TableHead className="text-muted-foreground font-semibold">Name</TableHead>
+                    <TableHead className="text-muted-foreground font-semibold">Contact</TableHead>
+                    <TableHead className="text-muted-foreground font-semibold">Total Bookings</TableHead>
+                    <TableHead className="text-right text-muted-foreground font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {customers.map((customer: any) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={customer.id} className="border-border/30 hover:bg-muted/20 transition-colors">
+                      <TableCell className="font-semibold text-foreground">
                         {customer.name}
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-sm">
-                            <Phone className="h-3 w-3" />
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Phone className="h-3 w-3 text-primary" />
+                            </div>
                             {customer.phone}
                           </div>
                           {customer.email && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Mail className="h-3 w-3" />
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <div className="h-6 w-6 rounded-full bg-accent/10 flex items-center justify-center">
+                                <Mail className="h-3 w-3 text-accent" />
+                              </div>
                               {customer.email}
                             </div>
                           )}
                           {customer.address && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <div className="h-6 w-6 rounded-full bg-success/10 flex items-center justify-center">
+                                <MapPin className="h-3 w-3 text-success" />
+                              </div>
                               {customer.address}
                             </div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.bookings?.[0]?.count || 0} bookings
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                          {customer.bookings?.[0]?.count || 0} bookings
+                        </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -279,6 +291,7 @@ export default function Customers() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(customer)}
+                            className="hover:bg-primary/10 hover:text-primary"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -286,6 +299,7 @@ export default function Customers() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(customer.id)}
+                            className="hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
