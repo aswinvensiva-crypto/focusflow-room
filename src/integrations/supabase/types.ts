@@ -162,6 +162,7 @@ export type Database = {
           created_at: string
           id: string
           price_per_day: number
+          room_category: string
           room_name: string
           room_number: string
           status: string
@@ -172,6 +173,7 @@ export type Database = {
           created_at?: string
           id?: string
           price_per_day: number
+          room_category?: string
           room_name: string
           room_number: string
           status?: string
@@ -182,6 +184,7 @@ export type Database = {
           created_at?: string
           id?: string
           price_per_day?: number
+          room_category?: string
           room_name?: string
           room_number?: string
           status?: string
