@@ -9,8 +9,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   AreaChart,
   Area,
@@ -38,10 +47,31 @@ const ROOM_COLORS = [
 export default function Calendar() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState<any[]>([]);
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [monthlyRevenueData, setMonthlyRevenueData] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  const roomCategories = [
+    { value: "standard", label: "Standard" },
+    { value: "deluxe", label: "Deluxe" },
+    { value: "ultra_deluxe", label: "Ultra Deluxe" },
+    { value: "suite", label: "Suite" },
+    { value: "presidential", label: "Presidential" },
+  ];
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "standard": return "bg-muted text-muted-foreground";
+      case "deluxe": return "bg-primary/20 text-primary";
+      case "ultra_deluxe": return "bg-accent/20 text-accent";
+      case "suite": return "bg-secondary/20 text-secondary-foreground";
+      case "presidential": return "bg-gradient-to-r from-primary to-accent text-white";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -75,6 +105,7 @@ export default function Calendar() {
 
       if (bookingsResult.data) setBookings(bookingsResult.data);
       if (roomsResult.data) setRooms(roomsResult.data);
+      if (allBookingsResult.data) setAllBookings(allBookingsResult.data);
 
       // Calculate monthly revenue data for the chart
       if (allBookingsResult.data && roomsResult.data) {
@@ -158,6 +189,42 @@ export default function Calendar() {
     });
 
     return Array.from(roomStatsMap.values());
+  };
+
+  const getAvailabilityByCategory = (date: Date) => {
+    const categoryAvailability: Record<string, { total: number; available: number; booked: string[] }> = {};
+    
+    // Initialize categories
+    roomCategories.forEach((cat) => {
+      categoryAvailability[cat.value] = { total: 0, available: 0, booked: [] };
+    });
+
+    // Count rooms by category
+    rooms.forEach((room: any) => {
+      const category = room.room_category || "standard";
+      if (categoryAvailability[category]) {
+        categoryAvailability[category].total++;
+        
+        // Check if room is booked on this date
+        const isBooked = allBookings.some((booking: any) => {
+          const checkIn = new Date(booking.check_in_date);
+          const checkOut = new Date(booking.check_out_date);
+          checkIn.setHours(0, 0, 0, 0);
+          checkOut.setHours(0, 0, 0, 0);
+          const checkDate = new Date(date);
+          checkDate.setHours(0, 0, 0, 0);
+          return booking.room_id === room.id && checkDate >= checkIn && checkDate <= checkOut;
+        });
+
+        if (isBooked) {
+          categoryAvailability[category].booked.push(room.room_number);
+        } else {
+          categoryAvailability[category].available++;
+        }
+      }
+    });
+
+    return categoryAvailability;
   };
 
   const changeMonth = (offset: number) => {
@@ -249,7 +316,72 @@ export default function Calendar() {
         </CardContent>
       </Card>
 
-      {/* Room Revenue Chart */}
+      {/* Room Availability by Category */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle>Room Availability by Category</CardTitle>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarPicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {roomCategories.map((category) => {
+              const availability = getAvailabilityByCategory(selectedDate)[category.value];
+              if (availability.total === 0) return null;
+              
+              return (
+                <Card key={category.value} className="border-l-4 border-l-primary/50">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <Badge className={`${getCategoryColor(category.value)} text-xs`}>
+                        {category.label}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-primary">{availability.available}</span>
+                      <span className="text-sm text-muted-foreground">/ {availability.total} rooms</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {availability.available === 0 ? (
+                        <span className="text-destructive font-medium">Fully booked</span>
+                      ) : availability.available === availability.total ? (
+                        <span className="text-green-500 font-medium">All available</span>
+                      ) : (
+                        <span>{availability.booked.length} booked: {availability.booked.join(", ")}</span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Room Revenue Trends (Last 6 Months)</CardTitle>
