@@ -35,7 +35,27 @@ export default function Rooms() {
     capacity: "1",
     pricePerDay: "",
     status: "available",
+    roomCategory: "standard",
   });
+
+  const roomCategories = [
+    { value: "standard", label: "Standard" },
+    { value: "deluxe", label: "Deluxe" },
+    { value: "ultra_deluxe", label: "Ultra Deluxe" },
+    { value: "suite", label: "Suite" },
+    { value: "presidential", label: "Presidential" },
+  ];
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "standard": return "bg-muted text-muted-foreground";
+      case "deluxe": return "bg-primary/20 text-primary";
+      case "ultra_deluxe": return "bg-accent/20 text-accent";
+      case "suite": return "bg-secondary/20 text-secondary-foreground";
+      case "presidential": return "bg-gradient-to-r from-primary to-accent text-white";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
 
   useEffect(() => {
     fetchRooms();
@@ -101,6 +121,7 @@ export default function Rooms() {
             capacity: Number(formData.capacity),
             price_per_day: Number(formData.pricePerDay),
             status: formData.status,
+            room_category: formData.roomCategory,
           })
           .eq("id", editingRoom.id);
 
@@ -113,6 +134,7 @@ export default function Rooms() {
           capacity: Number(formData.capacity),
           price_per_day: Number(formData.pricePerDay),
           status: formData.status,
+          room_category: formData.roomCategory,
         });
 
         if (error) throw error;
@@ -135,6 +157,7 @@ export default function Rooms() {
       capacity: room.capacity.toString(),
       pricePerDay: room.price_per_day.toString(),
       status: room.status,
+      roomCategory: room.room_category || "standard",
     });
     setOpen(true);
   };
@@ -159,6 +182,7 @@ export default function Rooms() {
       capacity: "1",
       pricePerDay: "",
       status: "available",
+      roomCategory: "standard",
     });
     setEditingRoom(null);
   };
@@ -251,6 +275,24 @@ export default function Rooms() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="roomCategory">Category *</Label>
+                <Select
+                  value={formData.roomCategory}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, roomCategory: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roomCategories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="status">Status *</Label>
                 <Select
                   value={formData.status}
@@ -283,73 +325,88 @@ export default function Rooms() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {rooms.map((room: any) => (
-          <Card key={room.id}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{room.room_number}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{room.room_name}</p>
-                </div>
-                <Badge className={getStatusColor(room.status)}>{room.status}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-4 items-center">
-                <div className="space-y-1 flex-1">
-                  <p className="text-sm text-muted-foreground">Capacity: {room.capacity} person(s)</p>
-                  <p className="text-lg font-bold text-primary">₹{room.price_per_day}/day</p>
-                  {roomRevenueMap[room.id] && (
-                    <p className="text-xs text-muted-foreground">
-                      Total Revenue: ₹{roomRevenueMap[room.id].revenue.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-                {roomRevenueMap[room.id]?.monthlyData.length > 0 && (
-                  <div className="w-24 h-12">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={roomRevenueMap[room.id].monthlyData}>
-                        <Tooltip 
-                          formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
-                          contentStyle={{ fontSize: '10px', padding: '4px' }}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="revenue" 
-                          stroke="hsl(var(--primary))" 
-                          fill="hsl(var(--primary) / 0.3)" 
-                          strokeWidth={1.5}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(room)}
-                  className="flex-1"
-                >
-                  <Edit className="mr-1 h-3 w-3" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(room.id)}
-                  className="flex-1"
-                >
-                  <Trash2 className="mr-1 h-3 w-3 text-destructive" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {roomCategories.map((category) => {
+        const categoryRooms = rooms.filter((room: any) => (room.room_category || "standard") === category.value);
+        if (categoryRooms.length === 0) return null;
+        
+        return (
+          <div key={category.value} className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Badge className={`${getCategoryColor(category.value)} text-sm px-3 py-1`}>
+                {category.label}
+              </Badge>
+              <span className="text-sm text-muted-foreground">({categoryRooms.length} rooms)</span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {categoryRooms.map((room: any) => (
+                <Card key={room.id} className="border-l-4" style={{ borderLeftColor: category.value === 'presidential' ? 'hsl(var(--primary))' : undefined }}>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{room.room_number}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{room.room_name}</p>
+                      </div>
+                      <Badge className={getStatusColor(room.status)}>{room.status}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex gap-4 items-center">
+                      <div className="space-y-1 flex-1">
+                        <p className="text-sm text-muted-foreground">Capacity: {room.capacity} person(s)</p>
+                        <p className="text-lg font-bold text-primary">₹{room.price_per_day}/day</p>
+                        {roomRevenueMap[room.id] && (
+                          <p className="text-xs text-muted-foreground">
+                            Total Revenue: ₹{roomRevenueMap[room.id].revenue.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      {roomRevenueMap[room.id]?.monthlyData.length > 0 && (
+                        <div className="w-24 h-12">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={roomRevenueMap[room.id].monthlyData}>
+                              <Tooltip 
+                                formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
+                                contentStyle={{ fontSize: '10px', padding: '4px' }}
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="revenue" 
+                                stroke="hsl(var(--primary))" 
+                                fill="hsl(var(--primary) / 0.3)" 
+                                strokeWidth={1.5}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(room)}
+                        className="flex-1"
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(room.id)}
+                        className="flex-1"
+                      >
+                        <Trash2 className="mr-1 h-3 w-3 text-destructive" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
