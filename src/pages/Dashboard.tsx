@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Building2, Users, Calendar, DollarSign, Receipt, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Plus, Building2, Users, Calendar, DollarSign, Receipt, TrendingUp, TrendingDown, Minus, BarChart3, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BookingsTable } from "@/components/bookings/BookingsTable";
 import { toast } from "sonner";
@@ -25,12 +25,24 @@ export default function Dashboard() {
     occupiedToday: 0,
     change: 0,
   });
+  const [revenueMetrics, setRevenueMetrics] = useState({
+    todayRevenue: 0,
+    yesterdayRevenue: 0,
+    revenueChange: 0,
+    adr: 0,
+    yesterdayAdr: 0,
+    adrChange: 0,
+    revpar: 0,
+    yesterdayRevpar: 0,
+    revparChange: 0,
+  });
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
     fetchOccupancyData();
+    fetchRevenueMetrics();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -168,6 +180,85 @@ export default function Dashboard() {
     }
   };
 
+  const fetchRevenueMetrics = async () => {
+    try {
+      // Get all rooms
+      const { data: rooms, error: roomsError } = await supabase
+        .from("rooms")
+        .select("id");
+      
+      if (roomsError) throw roomsError;
+
+      const totalRooms = rooms?.length || 0;
+
+      // Get today's and yesterday's dates
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      // Get bookings for today
+      const { data: todayBookings, error: todayError } = await supabase
+        .from("bookings")
+        .select("total_amount, room_id, check_in_date, check_out_date")
+        .lte("check_in_date", todayStr)
+        .gte("check_out_date", todayStr);
+
+      if (todayError) throw todayError;
+
+      // Get bookings for yesterday
+      const { data: yesterdayBookings, error: yesterdayError } = await supabase
+        .from("bookings")
+        .select("total_amount, room_id, check_in_date, check_out_date")
+        .lte("check_in_date", yesterdayStr)
+        .gte("check_out_date", yesterdayStr);
+
+      if (yesterdayError) throw yesterdayError;
+
+      // Calculate today's metrics
+      const todayRevenue = todayBookings?.reduce((sum, b) => {
+        const days = Math.max(1, Math.ceil((new Date(b.check_out_date).getTime() - new Date(b.check_in_date).getTime()) / (1000 * 60 * 60 * 24)));
+        return sum + Number(b.total_amount) / days;
+      }, 0) || 0;
+      
+      const todayOccupiedRooms = new Set(todayBookings?.map(b => b.room_id)).size;
+      const todayAdr = todayOccupiedRooms > 0 ? todayRevenue / todayOccupiedRooms : 0;
+      const todayRevpar = totalRooms > 0 ? todayRevenue / totalRooms : 0;
+
+      // Calculate yesterday's metrics
+      const yesterdayRevenue = yesterdayBookings?.reduce((sum, b) => {
+        const days = Math.max(1, Math.ceil((new Date(b.check_out_date).getTime() - new Date(b.check_in_date).getTime()) / (1000 * 60 * 60 * 24)));
+        return sum + Number(b.total_amount) / days;
+      }, 0) || 0;
+      
+      const yesterdayOccupiedRooms = new Set(yesterdayBookings?.map(b => b.room_id)).size;
+      const yesterdayAdr = yesterdayOccupiedRooms > 0 ? yesterdayRevenue / yesterdayOccupiedRooms : 0;
+      const yesterdayRevpar = totalRooms > 0 ? yesterdayRevenue / totalRooms : 0;
+
+      // Calculate percentage changes
+      const revenueChange = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
+      const adrChange = yesterdayAdr > 0 ? ((todayAdr - yesterdayAdr) / yesterdayAdr) * 100 : 0;
+      const revparChange = yesterdayRevpar > 0 ? ((todayRevpar - yesterdayRevpar) / yesterdayRevpar) * 100 : 0;
+
+      setRevenueMetrics({
+        todayRevenue: Math.round(todayRevenue),
+        yesterdayRevenue: Math.round(yesterdayRevenue),
+        revenueChange: Math.round(revenueChange * 10) / 10,
+        adr: Math.round(todayAdr),
+        yesterdayAdr: Math.round(yesterdayAdr),
+        adrChange: Math.round(adrChange * 10) / 10,
+        revpar: Math.round(todayRevpar),
+        yesterdayRevpar: Math.round(yesterdayRevpar),
+        revparChange: Math.round(revparChange * 10) / 10,
+      });
+    } catch (error: any) {
+      console.error("Failed to fetch revenue metrics", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -181,7 +272,7 @@ export default function Dashboard() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="font-display text-4xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground mt-1">Welcome back to le Hues management</p>
+          <p className="text-muted-foreground mt-1">Welcome back to Hotel Manager</p>
         </div>
         <Button onClick={() => navigate("/bookings/new")} variant="premium" size="lg">
           <Plus className="mr-2 h-5 w-5" />
@@ -269,48 +360,143 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Occupancy Bar */}
-      <Card className="stat-card">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="font-display text-xl">Today's Occupancy</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              {occupancy.occupiedToday} of {occupancy.totalRooms} rooms occupied
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {occupancy.change > 0 ? (
-              <div className="flex items-center gap-1 text-success bg-success/10 px-3 py-1.5 rounded-full">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-sm font-medium">+{occupancy.change}%</span>
+      {/* Revenue Metrics Section */}
+      <div>
+        <h3 className="font-display text-xl font-semibold mb-4">Revenue Performance</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* Occupancy Card */}
+          <Card className="stat-card">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-success" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground">OCCUPANCY</p>
+                  <p className="text-3xl font-display font-bold mt-1">{occupancy.today}%</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {occupancy.change > 0 ? (
+                      <span className="text-sm text-success flex items-center gap-0.5">
+                        <TrendingUp className="h-3 w-3" />
+                        {occupancy.change}%
+                      </span>
+                    ) : occupancy.change < 0 ? (
+                      <span className="text-sm text-destructive flex items-center gap-0.5">
+                        <TrendingDown className="h-3 w-3" />
+                        {Math.abs(occupancy.change)}%
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">0%</span>
+                    )}
+                  </div>
+                </div>
               </div>
-            ) : occupancy.change < 0 ? (
-              <div className="flex items-center gap-1 text-destructive bg-destructive/10 px-3 py-1.5 rounded-full">
-                <TrendingDown className="h-4 w-4" />
-                <span className="text-sm font-medium">{occupancy.change}%</span>
+            </CardContent>
+          </Card>
+
+          {/* Revenue Card */}
+          <Card className="stat-card">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Wallet className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground">REVENUE</p>
+                  <p className="text-3xl font-display font-bold mt-1">
+                    ₹{revenueMetrics.todayRevenue >= 1000 
+                      ? `${(revenueMetrics.todayRevenue / 1000).toFixed(1)}K` 
+                      : revenueMetrics.todayRevenue}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {revenueMetrics.revenueChange > 0 ? (
+                      <span className="text-sm text-success flex items-center gap-0.5">
+                        <TrendingUp className="h-3 w-3" />
+                        {revenueMetrics.revenueChange}%
+                      </span>
+                    ) : revenueMetrics.revenueChange < 0 ? (
+                      <span className="text-sm text-destructive flex items-center gap-0.5">
+                        <TrendingDown className="h-3 w-3" />
+                        {Math.abs(revenueMetrics.revenueChange)}%
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">0%</span>
+                    )}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-1 text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
-                <Minus className="h-4 w-4" />
-                <span className="text-sm font-medium">0%</span>
+            </CardContent>
+          </Card>
+
+          {/* ADR Card */}
+          <Card className="stat-card">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground">ADR</p>
+                  <p className="text-3xl font-display font-bold mt-1">
+                    ₹{revenueMetrics.adr >= 1000 
+                      ? `${(revenueMetrics.adr / 1000).toFixed(1)}K` 
+                      : revenueMetrics.adr}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {revenueMetrics.adrChange > 0 ? (
+                      <span className="text-sm text-success flex items-center gap-0.5">
+                        <TrendingUp className="h-3 w-3" />
+                        {revenueMetrics.adrChange}%
+                      </span>
+                    ) : revenueMetrics.adrChange < 0 ? (
+                      <span className="text-sm text-destructive flex items-center gap-0.5">
+                        <TrendingDown className="h-3 w-3" />
+                        {Math.abs(revenueMetrics.adrChange)}%
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">0%</span>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-            <span className="text-xs text-muted-foreground">vs yesterday</span>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-4xl font-display font-bold text-gradient">{occupancy.today}%</span>
-            <span className="text-sm text-muted-foreground">Yesterday: {occupancy.yesterday}%</span>
-          </div>
-          <Progress value={occupancy.today} className="h-3" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>0%</span>
-            <span>50%</span>
-            <span>100%</span>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          {/* RevPAR Card */}
+          <Card className="stat-card">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-warning" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground">REVPAR</p>
+                  <p className="text-3xl font-display font-bold mt-1">
+                    ₹{revenueMetrics.revpar >= 1000 
+                      ? `${(revenueMetrics.revpar / 1000).toFixed(1)}K` 
+                      : revenueMetrics.revpar}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {revenueMetrics.revparChange > 0 ? (
+                      <span className="text-sm text-success flex items-center gap-0.5">
+                        <TrendingUp className="h-3 w-3" />
+                        {revenueMetrics.revparChange}%
+                      </span>
+                    ) : revenueMetrics.revparChange < 0 ? (
+                      <span className="text-sm text-destructive flex items-center gap-0.5">
+                        <TrendingDown className="h-3 w-3" />
+                        {Math.abs(revenueMetrics.revparChange)}%
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">0%</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <Card>
         <CardHeader className="border-b border-border/50">

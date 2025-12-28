@@ -37,7 +37,7 @@ export function AppSidebar() {
             </div>
             {open && (
               <span className="font-display text-lg font-semibold tracking-tight text-iridescent">
-                le Hues
+                HOTEL MANAGER
               </span>
             )}
           </SidebarGroupLabel>
