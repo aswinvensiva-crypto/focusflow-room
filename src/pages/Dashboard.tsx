@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Users, Calendar, DollarSign, Receipt } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Building2, Users, Calendar, DollarSign, Receipt, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BookingsTable } from "@/components/bookings/BookingsTable";
 import { toast } from "sonner";
@@ -17,11 +18,19 @@ export default function Dashboard() {
     monthlyExpenses: 0,
     profit: 0,
   });
+  const [occupancy, setOccupancy] = useState({
+    today: 0,
+    yesterday: 0,
+    totalRooms: 0,
+    occupiedToday: 0,
+    change: 0,
+  });
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchOccupancyData();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -86,6 +95,76 @@ export default function Dashboard() {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOccupancyData = async () => {
+    try {
+      // Get all rooms
+      const { data: rooms, error: roomsError } = await supabase
+        .from("rooms")
+        .select("id");
+      
+      if (roomsError) throw roomsError;
+
+      const totalRooms = rooms?.length || 0;
+      if (totalRooms === 0) {
+        setOccupancy({ today: 0, yesterday: 0, totalRooms: 0, occupiedToday: 0, change: 0 });
+        return;
+      }
+
+      // Get today's and yesterday's dates
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      // Get all bookings that overlap with today or yesterday
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("room_id, check_in_date, check_out_date")
+        .lte("check_in_date", todayStr)
+        .gte("check_out_date", yesterdayStr);
+
+      if (bookingsError) throw bookingsError;
+
+      // Calculate occupancy for today
+      const occupiedTodaySet = new Set<string>();
+      const occupiedYesterdaySet = new Set<string>();
+
+      bookingsData?.forEach((booking) => {
+        const checkIn = new Date(booking.check_in_date);
+        const checkOut = new Date(booking.check_out_date);
+        checkIn.setHours(0, 0, 0, 0);
+        checkOut.setHours(0, 0, 0, 0);
+
+        if (today >= checkIn && today <= checkOut) {
+          occupiedTodaySet.add(booking.room_id);
+        }
+        if (yesterday >= checkIn && yesterday <= checkOut) {
+          occupiedYesterdaySet.add(booking.room_id);
+        }
+      });
+
+      const occupiedToday = occupiedTodaySet.size;
+      const occupiedYesterday = occupiedYesterdaySet.size;
+
+      const todayPercent = Math.round((occupiedToday / totalRooms) * 100);
+      const yesterdayPercent = Math.round((occupiedYesterday / totalRooms) * 100);
+      const change = todayPercent - yesterdayPercent;
+
+      setOccupancy({
+        today: todayPercent,
+        yesterday: yesterdayPercent,
+        totalRooms,
+        occupiedToday,
+        change,
+      });
+    } catch (error: any) {
+      console.error("Failed to fetch occupancy data", error);
     }
   };
 
@@ -189,6 +268,49 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Occupancy Bar */}
+      <Card className="stat-card">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="font-display text-xl">Today's Occupancy</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {occupancy.occupiedToday} of {occupancy.totalRooms} rooms occupied
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {occupancy.change > 0 ? (
+              <div className="flex items-center gap-1 text-success bg-success/10 px-3 py-1.5 rounded-full">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-sm font-medium">+{occupancy.change}%</span>
+              </div>
+            ) : occupancy.change < 0 ? (
+              <div className="flex items-center gap-1 text-destructive bg-destructive/10 px-3 py-1.5 rounded-full">
+                <TrendingDown className="h-4 w-4" />
+                <span className="text-sm font-medium">{occupancy.change}%</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                <Minus className="h-4 w-4" />
+                <span className="text-sm font-medium">0%</span>
+              </div>
+            )}
+            <span className="text-xs text-muted-foreground">vs yesterday</span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-4xl font-display font-bold text-gradient">{occupancy.today}%</span>
+            <span className="text-sm text-muted-foreground">Yesterday: {occupancy.yesterday}%</span>
+          </div>
+          <Progress value={occupancy.today} className="h-3" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>0%</span>
+            <span>50%</span>
+            <span>100%</span>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="border-b border-border/50">
