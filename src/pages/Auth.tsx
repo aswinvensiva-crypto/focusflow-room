@@ -66,9 +66,9 @@ export default function Auth() {
             </div>
           </div>
           <div>
-            <CardTitle className="font-display text-4xl font-bold tracking-tight text-iridescent">le Hues</CardTitle>
+            <CardTitle className="font-display text-4xl font-bold tracking-tight text-iridescent">HOTEL MANAGER</CardTitle>
             <CardDescription className="text-muted-foreground mt-2 text-base">
-              Luxury Room Booking Management
+              Hotel Room Booking Management
             </CardDescription>
           </div>
         </CardHeader>
