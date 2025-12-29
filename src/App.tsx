@@ -14,6 +14,14 @@ import Rooms from "./pages/Rooms";
 import Customers from "./pages/Customers";
 import Expenses from "./pages/Expenses";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+
+function App() {
+  return <Auth />;
+}
+
+export default App;
+
 
 const queryClient = new QueryClient();
 
