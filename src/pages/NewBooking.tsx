@@ -75,7 +75,7 @@ export default function NewBooking() {
 
   const calculateTotal = () => {
     if (!formData.checkInDate || !formData.checkOutDate || !formData.roomId) {
-      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0, pendingAmount: 0 };
+      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0 };
     }
 
     const days = differenceInDays(
@@ -84,16 +84,15 @@ export default function NewBooking() {
     );
 
     if (days <= 0) {
-      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0, pendingAmount: 0 };
+      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0 };
     }
 
     const room = rooms.find((r) => r.id === formData.roomId);
     const baseAmount = days * (room?.price_per_day || 0);
     const taxAmount = baseAmount * (Number(formData.taxPercentage) / 100);
     const totalAmount = baseAmount + taxAmount;
-    const pendingAmount = totalAmount - Number(formData.advancePaid);
 
-    return { days, baseAmount, taxAmount, totalAmount, pendingAmount };
+    return { days, baseAmount, taxAmount, totalAmount };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +104,6 @@ export default function NewBooking() {
     try {
       let customerId = formData.customerId;
 
-      // Create new customer
       if (newCustomer) {
         const { data, error } = await supabase
           .from("customers")
@@ -123,8 +121,7 @@ export default function NewBooking() {
         customerId = data.id;
       }
 
-      const { days, baseAmount, taxAmount, totalAmount, pendingAmount } =
-        calculateTotal();
+      const { days, baseAmount, taxAmount, totalAmount } = calculateTotal();
 
       const { error } = await supabase.from("bookings").insert({
         user_id: user.id,
@@ -138,7 +135,7 @@ export default function NewBooking() {
         tax_amount: taxAmount,
         total_amount: totalAmount,
         advance_paid: Number(formData.advancePaid),
-        pending_amount: pendingAmount,
+        pending_amount: totalAmount - Number(formData.advancePaid),
         notes: formData.notes,
       });
 
@@ -166,9 +163,128 @@ export default function NewBooking() {
         <CardHeader>
           <CardTitle>Booking Details</CardTitle>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* UI unchanged – your existing JSX stays here */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={newCustomer}
+                onChange={(e) => setNewCustomer(e.target.checked)}
+              />
+              <Label>New Customer</Label>
+            </div>
+
+            {newCustomer ? (
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  placeholder="Customer Name"
+                  value={formData.customerName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerName: e.target.value })
+                  }
+                  required
+                />
+                <Input
+                  placeholder="Phone"
+                  value={formData.customerPhone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerPhone: e.target.value })
+                  }
+                  required
+                />
+                <Input
+                  placeholder="Email"
+                  value={formData.customerEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerEmail: e.target.value })
+                  }
+                />
+                <Input
+                  placeholder="Address"
+                  value={formData.customerAddress}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerAddress: e.target.value })
+                  }
+                />
+              </div>
+            ) : (
+              <Select
+                value={formData.customerId}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, customerId: v })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name} - {c.phone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Select
+              value={formData.roomId}
+              onValueChange={(v) =>
+                setFormData({ ...formData, roomId: v })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Room" />
+              </SelectTrigger>
+              <SelectContent>
+                {rooms.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.room_number} - ₹{r.price_per_day}/day
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="date"
+                value={formData.checkInDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, checkInDate: e.target.value })
+                }
+                required
+              />
+              <Input
+                type="date"
+                value={formData.checkOutDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, checkOutDate: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            <Input
+              type="number"
+              placeholder="Advance Paid"
+              value={formData.advancePaid}
+              onChange={(e) =>
+                setFormData({ ...formData, advancePaid: e.target.value })
+              }
+            />
+
+            <Textarea
+              placeholder="Notes"
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
+            />
+
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create Booking"}
+            </Button>
           </form>
         </CardContent>
       </Card>
