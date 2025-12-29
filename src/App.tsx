@@ -52,10 +52,10 @@ export default function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public */}
+              {/* Public route */}
               <Route path="/auth" element={<Auth />} />
 
-              {/* Protected */}
+              {/* Protected routes */}
               <Route
                 path="/"
                 element={
@@ -119,7 +119,7 @@ export default function App() {
                 }
               />
 
-              {/* Catch all */}
+              {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
