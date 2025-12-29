@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+  const supabaseUrl = "https://yykymdbydanygokrcauy.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5a3ltZGJ5ZGFueWdva3JjYXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMTc1ODYsImV4cCI6MjA4MjU5MzU4Nn0.59blw7xwGocAkAExuRtnpenN_VU_P5ORPJk-yivkC4Q";
+
+  const supabase = window.supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+  );
+</script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HOTEL MANAGER</title>
