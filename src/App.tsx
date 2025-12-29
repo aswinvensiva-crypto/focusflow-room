@@ -77,8 +77,6 @@ function App() {
   return <Auth />;
 }
 
-export default App;
-
 
 const queryClient = new QueryClient();
 
