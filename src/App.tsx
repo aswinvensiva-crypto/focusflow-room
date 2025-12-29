@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,7 +37,12 @@ function RequireAuth() {
     return <Navigate to="/auth" replace />;
   }
 
-  return <MainLayout />;
+  // ✅ THIS IS THE KEY FIX
+  return (
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
+  );
 }
 
 /* ---------------- App ---------------- */
@@ -55,7 +60,7 @@ export default function App() {
               {/* Public */}
               <Route path="/auth" element={<Auth />} />
 
-              {/* Protected layout */}
+              {/* Protected */}
               <Route element={<RequireAuth />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/bookings/new" element={<NewBooking />} />
