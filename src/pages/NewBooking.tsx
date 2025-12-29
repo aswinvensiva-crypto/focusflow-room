@@ -56,7 +56,6 @@ export default function NewBooking() {
       supabase
         .from("rooms")
         .select("*")
-        .eq("status", "available")
         .eq("user_id", user!.id),
 
       supabase
@@ -87,7 +86,10 @@ export default function NewBooking() {
       return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0 };
     }
 
-    const room = rooms.find((r) => r.id === formData.roomId);
+    const room = rooms.find(
+      (r) => String(r.id) === formData.roomId
+    );
+
     const baseAmount = days * (room?.price_per_day || 0);
     const taxAmount = baseAmount * (Number(formData.taxPercentage) / 100);
     const totalAmount = baseAmount + taxAmount;
@@ -220,7 +222,7 @@ export default function NewBooking() {
                 </SelectTrigger>
                 <SelectContent>
                   {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={String(c.id)}>
                       {c.name} - {c.phone}
                     </SelectItem>
                   ))}
@@ -228,6 +230,7 @@ export default function NewBooking() {
               </Select>
             )}
 
+            {/* ✅ FIXED ROOM SELECT */}
             <Select
               value={formData.roomId}
               onValueChange={(v) =>
@@ -238,9 +241,14 @@ export default function NewBooking() {
                 <SelectValue placeholder="Select Room" />
               </SelectTrigger>
               <SelectContent>
+                {rooms.length === 0 && (
+                  <div className="px-2 py-1 text-sm text-muted-foreground">
+                    No rooms found
+                  </div>
+                )}
                 {rooms.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.room_number} - ₹{r.price_per_day}/day
+                  <SelectItem key={r.id} value={String(r.id)}>
+                    Room {r.room_number} – ₹{r.price_per_day}/day
                   </SelectItem>
                 ))}
               </SelectContent>
