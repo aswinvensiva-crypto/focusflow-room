@@ -20,15 +20,15 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-/* ---------------- Protected Route ---------------- */
+/* ---------------- Auth Guard ---------------- */
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function RequireAuth() {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Loading...</p>
+        Loading...
       </div>
     );
   }
@@ -37,7 +37,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  return <MainLayout>{children}</MainLayout>;
+  return <MainLayout />;
 }
 
 /* ---------------- App ---------------- */
@@ -52,74 +52,21 @@ export default function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public route */}
+              {/* Public */}
               <Route path="/auth" element={<Auth />} />
 
-              {/* Protected routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Protected layout */}
+              <Route element={<RequireAuth />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/bookings/new" element={<NewBooking />} />
+                <Route path="/bookings/:id" element={<EditBooking />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/rooms" element={<Rooms />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/expenses" element={<Expenses />} />
+              </Route>
 
-              <Route
-                path="/bookings/new"
-                element={
-                  <ProtectedRoute>
-                    <NewBooking />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/bookings/:id"
-                element={
-                  <ProtectedRoute>
-                    <EditBooking />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/calendar"
-                element={
-                  <ProtectedRoute>
-                    <Calendar />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/rooms"
-                element={
-                  <ProtectedRoute>
-                    <Rooms />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/customers"
-                element={
-                  <ProtectedRoute>
-                    <Customers />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/expenses"
-                element={
-                  <ProtectedRoute>
-                    <Expenses />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Catch-all */}
+              {/* Catch all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
