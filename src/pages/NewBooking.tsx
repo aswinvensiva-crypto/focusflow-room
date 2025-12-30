@@ -117,6 +117,7 @@ export default function NewBooking() {
       const { days, baseAmount, taxAmount, totalAmount } = calculateTotal();
 
       const { error } = await supabase.from("bookings").insert({
+        user_id: user.id,
         customer_id: customerId,
         room_id: formData.roomId,
         check_in_date: formData.checkInDate,
@@ -124,11 +125,11 @@ export default function NewBooking() {
         total_days: days,
         base_amount: baseAmount,
         tax_percentage: Number(formData.taxPercentage),
+        tax_amount: taxAmount,
         total_amount: totalAmount,
         pending_amount: totalAmount - Number(formData.advancePaid),
         advance_paid: Number(formData.advancePaid),
         notes: formData.notes || null,
-        created_by: user.id,
       });
 
       if (error) throw error;
