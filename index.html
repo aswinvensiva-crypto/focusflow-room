@@ -1,38 +1,86 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Supabase Browser Demo</title>
 
-    <title>HOTEL MANAGER</title>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
-    <meta name="description" content="Hotel Room Booking Management System" />
-    <meta name="author" content="HOTEL MANAGER" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="HOTEL MANAGER" />
-    <meta property="og:description" content="Luxury Room Booking Management System" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <h1>Supabase Data Viewer</h1>
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <button id="btnFetchRooms">Fetch Rooms</button>
+  <button id="btnFetchCustomers">Fetch Customers</button>
+  <button id="btnFetchBookings">Fetch Bookings</button>
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
+  <pre id="output"></pre>
 
-  <body>
-    <div id="root"></div>
+  <script>
+    // 1) Paste your Supabase credentials here
+    const SUPABASE_URL = "https://delkooaxroutckwvxfbe.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlbGtvb2F4cm91dGNrd3Z4ZmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1ODcxNzMsImV4cCI6MjA3NjE2MzE3M30.3upU-B8uVds1N3N0dl_EoZgo0SYyq3hxeRwGCDZWpho";
 
-    <!-- React entry point -->
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    // 2) Create the Supabase client
+    const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Output area
+    const output = document.getElementById("output");
+
+    // Helper to print results
+    function showResult(label, data) {
+      output.innerText = `${label}:\n\n` + JSON.stringify(data, null, 2);
+    }
+
+    // Fetch Rooms
+    document.getElementById("btnFetchRooms")
+      .addEventListener("click", async () => {
+        const { data, error } = await supabase
+          .from("rooms")
+          .select("*");
+
+        if (error) {
+          showResult("Rooms Error", error.message);
+        } else {
+          showResult("Rooms Data", data);
+        }
+      });
+
+    // Fetch Customers
+    document.getElementById("btnFetchCustomers")
+      .addEventListener("click", async () => {
+        const { data, error } = await supabase
+          .from("customers")
+          .select("*");
+
+        if (error) {
+          showResult("Customers Error", error.message);
+        } else {
+          showResult("Customers Data", data);
+        }
+      });
+
+    // Fetch Bookings
+    document.getElementById("btnFetchBookings")
+      .addEventListener("click", async () => {
+        const { data, error } = await supabase
+          .from("bookings")
+          .select("*");
+
+        if (error) {
+          showResult("Bookings Error", error.message);
+        } else {
+          showResult("Bookings Data", data);
+        }
+      });
+  </script>
+</body>
 </html>
