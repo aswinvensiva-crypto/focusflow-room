@@ -37,12 +37,7 @@ function RequireAuth() {
     return <Navigate to="/auth" replace />;
   }
 
-  // ✅ THIS IS THE KEY FIX
-  return (
-    <MainLayout>
-      <Outlet />
-    </MainLayout>
-  );
+  return <MainLayout />;
 }
 
 /* ---------------- App ---------------- */

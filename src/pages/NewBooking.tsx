@@ -53,16 +53,8 @@ export default function NewBooking() {
 
   const fetchRoomsAndCustomers = async () => {
     const [roomsResult, customersResult] = await Promise.all([
-      supabase
-        .from("rooms")
-        .select("*")
-        .eq("user_id", user!.id),
-
-      supabase
-        .from("customers")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("name"),
+      supabase.from("rooms").select("*"),
+      supabase.from("customers").select("*").order("name"),
     ]);
 
     if (roomsResult.error) toast.error(roomsResult.error.message);
@@ -110,11 +102,10 @@ export default function NewBooking() {
         const { data, error } = await supabase
           .from("customers")
           .insert({
-            user_id: user.id,
             name: formData.customerName,
             phone: formData.customerPhone,
-            email: formData.customerEmail,
-            address: formData.customerAddress,
+            email: formData.customerEmail || null,
+            address: formData.customerAddress || null,
           })
           .select()
           .single();
@@ -126,7 +117,6 @@ export default function NewBooking() {
       const { days, baseAmount, taxAmount, totalAmount } = calculateTotal();
 
       const { error } = await supabase.from("bookings").insert({
-        user_id: user.id,
         customer_id: customerId,
         room_id: formData.roomId,
         check_in_date: formData.checkInDate,
@@ -134,11 +124,11 @@ export default function NewBooking() {
         total_days: days,
         base_amount: baseAmount,
         tax_percentage: Number(formData.taxPercentage),
-        tax_amount: taxAmount,
         total_amount: totalAmount,
-        advance_paid: Number(formData.advancePaid),
         pending_amount: totalAmount - Number(formData.advancePaid),
-        notes: formData.notes,
+        advance_paid: Number(formData.advancePaid),
+        notes: formData.notes || null,
+        created_by: user.id,
       });
 
       if (error) throw error;
