@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,7 @@ export default function NewBooking() {
     taxPercentage: "0",
     advancePaid: "0",
     notes: "",
+    bookingStatus: "confirmed",
     customerName: "",
     customerPhone: "",
     customerEmail: "",
@@ -53,7 +55,7 @@ export default function NewBooking() {
 
   const fetchRoomsAndCustomers = async () => {
     const [roomsResult, customersResult] = await Promise.all([
-      supabase.from("rooms").select("*"),
+      supabase.from("rooms").select("*").eq("status", "available"),
       supabase.from("customers").select("*").order("name"),
     ]);
 
@@ -66,7 +68,7 @@ export default function NewBooking() {
 
   const calculateTotal = () => {
     if (!formData.checkInDate || !formData.checkOutDate || !formData.roomId) {
-      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0 };
+      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0, pendingAmount: 0 };
     }
 
     const days = differenceInDays(
@@ -75,23 +77,28 @@ export default function NewBooking() {
     );
 
     if (days <= 0) {
-      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0 };
+      return { days: 0, baseAmount: 0, taxAmount: 0, totalAmount: 0, pendingAmount: 0 };
     }
 
-    const room = rooms.find(
-      (r) => String(r.id) === formData.roomId
-    );
-
+    const room = rooms.find((r) => String(r.id) === formData.roomId);
     const baseAmount = days * (room?.price_per_day || 0);
     const taxAmount = baseAmount * (Number(formData.taxPercentage) / 100);
     const totalAmount = baseAmount + taxAmount;
+    const pendingAmount = totalAmount - Number(formData.advancePaid);
 
-    return { days, baseAmount, taxAmount, totalAmount };
+    return { days, baseAmount, taxAmount, totalAmount, pendingAmount };
   };
+
+  const { days, baseAmount, taxAmount, totalAmount, pendingAmount } = calculateTotal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (days <= 0) {
+      toast.error("Check-out date must be after check-in date");
+      return;
+    }
 
     setLoading(true);
 
@@ -99,6 +106,12 @@ export default function NewBooking() {
       let customerId = formData.customerId;
 
       if (newCustomer) {
+        if (!formData.customerName || !formData.customerPhone) {
+          toast.error("Customer name and phone are required");
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase
           .from("customers")
           .insert({
@@ -114,7 +127,17 @@ export default function NewBooking() {
         customerId = data.id;
       }
 
-      const { days, baseAmount, taxAmount, totalAmount } = calculateTotal();
+      if (!customerId) {
+        toast.error("Please select or create a customer");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.roomId) {
+        toast.error("Please select a room");
+        setLoading(false);
+        return;
+      }
 
       const { error } = await supabase.from("bookings").insert({
         user_id: user.id,
@@ -127,8 +150,9 @@ export default function NewBooking() {
         tax_percentage: Number(formData.taxPercentage),
         tax_amount: taxAmount,
         total_amount: totalAmount,
-        pending_amount: totalAmount - Number(formData.advancePaid),
         advance_paid: Number(formData.advancePaid),
+        pending_amount: pendingAmount,
+        booking_status: formData.bookingStatus,
         notes: formData.notes || null,
       });
 
@@ -143,6 +167,8 @@ export default function NewBooking() {
     }
   };
 
+  const selectedRoom = rooms.find((r) => String(r.id) === formData.roomId);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -152,141 +178,287 @@ export default function NewBooking() {
         <h2 className="text-3xl font-bold">New Booking</h2>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Booking Details</CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-2">
+        {/* Customer Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="newCustomer"
                 checked={newCustomer}
-                onChange={(e) => setNewCustomer(e.target.checked)}
+                onCheckedChange={(checked) => setNewCustomer(checked as boolean)}
               />
-              <Label>New Customer</Label>
+              <Label htmlFor="newCustomer">New Customer</Label>
             </div>
 
             {newCustomer ? (
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  placeholder="Customer Name"
-                  value={formData.customerName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerName: e.target.value })
-                  }
-                  required
-                />
-                <Input
-                  placeholder="Phone"
-                  value={formData.customerPhone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerPhone: e.target.value })
-                  }
-                  required
-                />
-                <Input
-                  placeholder="Email"
-                  value={formData.customerEmail}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerEmail: e.target.value })
-                  }
-                />
-                <Input
-                  placeholder="Address"
-                  value={formData.customerAddress}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerAddress: e.target.value })
-                  }
-                />
+              <div className="grid gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">Name *</Label>
+                    <Input
+                      id="customerName"
+                      placeholder="Customer Name"
+                      value={formData.customerName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, customerName: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPhone">Phone *</Label>
+                    <Input
+                      id="customerPhone"
+                      placeholder="Phone Number"
+                      value={formData.customerPhone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, customerPhone: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerEmail">Email</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      placeholder="Email Address"
+                      value={formData.customerEmail}
+                      onChange={(e) =>
+                        setFormData({ ...formData, customerEmail: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerAddress">Address</Label>
+                    <Input
+                      id="customerAddress"
+                      placeholder="Address"
+                      value={formData.customerAddress}
+                      onChange={(e) =>
+                        setFormData({ ...formData, customerAddress: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             ) : (
+              <div className="space-y-2">
+                <Label>Select Customer *</Label>
+                <Select
+                  value={formData.customerId}
+                  onValueChange={(v) => setFormData({ ...formData, customerId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.length === 0 && (
+                      <div className="px-2 py-1 text-sm text-muted-foreground">
+                        No customers found
+                      </div>
+                    )}
+                    {customers.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name} - {c.phone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Booking Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Booking Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Room *</Label>
               <Select
-                value={formData.customerId}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, customerId: v })
-                }
+                value={formData.roomId}
+                onValueChange={(v) => setFormData({ ...formData, roomId: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Customer" />
+                  <SelectValue placeholder="Select Room" />
                 </SelectTrigger>
                 <SelectContent>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name} - {c.phone}
+                  {rooms.length === 0 && (
+                    <div className="px-2 py-1 text-sm text-muted-foreground">
+                      No available rooms
+                    </div>
+                  )}
+                  {rooms.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.room_number} - {r.room_name} (₹{r.price_per_day}/day)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            )}
-
-            {/* ✅ FIXED ROOM SELECT */}
-            <Select
-              value={formData.roomId}
-              onValueChange={(v) =>
-                setFormData({ ...formData, roomId: v })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Room" />
-              </SelectTrigger>
-              <SelectContent>
-                {rooms.length === 0 && (
-                  <div className="px-2 py-1 text-sm text-muted-foreground">
-                    No rooms found
-                  </div>
-                )}
-                {rooms.map((r) => (
-                  <SelectItem key={r.id} value={String(r.id)}>
-                    Room {r.room_number} – ₹{r.price_per_day}/day
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                type="date"
-                value={formData.checkInDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, checkInDate: e.target.value })
-                }
-                required
-              />
-              <Input
-                type="date"
-                value={formData.checkOutDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, checkOutDate: e.target.value })
-                }
-                required
-              />
+              {selectedRoom && (
+                <p className="text-sm text-muted-foreground">
+                  Category: {selectedRoom.room_category} | Capacity: {selectedRoom.capacity} person(s)
+                </p>
+              )}
             </div>
 
-            <Input
-              type="number"
-              placeholder="Advance Paid"
-              value={formData.advancePaid}
-              onChange={(e) =>
-                setFormData({ ...formData, advancePaid: e.target.value })
-              }
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="checkInDate">Check-in Date *</Label>
+                <Input
+                  id="checkInDate"
+                  type="date"
+                  value={formData.checkInDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, checkInDate: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="checkOutDate">Check-out Date *</Label>
+                <Input
+                  id="checkOutDate"
+                  type="date"
+                  value={formData.checkOutDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, checkOutDate: e.target.value })
+                  }
+                  required
+                />
+              </div>
+            </div>
 
-            <Textarea
-              placeholder="Notes"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-            />
+            <div className="space-y-2">
+              <Label htmlFor="bookingStatus">Booking Status</Label>
+              <Select
+                value={formData.bookingStatus}
+                onValueChange={(v) => setFormData({ ...formData, bookingStatus: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="checked_in">Checked In</SelectItem>
+                  <SelectItem value="checked_out">Checked Out</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Booking"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        {/* Payment Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="taxPercentage">Tax Percentage (%)</Label>
+                <Input
+                  id="taxPercentage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.taxPercentage}
+                  onChange={(e) =>
+                    setFormData({ ...formData, taxPercentage: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="advancePaid">Advance Paid (₹)</Label>
+                <Input
+                  id="advancePaid"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.advancePaid}
+                  onChange={(e) =>
+                    setFormData({ ...formData, advancePaid: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Additional notes..."
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                rows={3}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Billing Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 p-4 bg-muted rounded-lg">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total Days:</span>
+                <span className="font-medium">{days} days</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Room Rate ({selectedRoom?.room_number || "N/A"}):
+                </span>
+                <span className="font-medium">₹{selectedRoom?.price_per_day || 0}/day</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Base Amount:</span>
+                <span className="font-medium">₹{baseAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tax ({formData.taxPercentage}%):</span>
+                <span className="font-medium">₹{taxAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-semibold">Total Amount:</span>
+                <span className="font-bold text-primary">₹{totalAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Advance Paid:</span>
+                <span className="font-medium text-green-600">₹{Number(formData.advancePaid).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-semibold text-destructive">Pending Amount:</span>
+                <span className="font-bold text-destructive">₹{pendingAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-6">
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? "Creating..." : "Create Booking"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate("/")}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
     </div>
   );
 }
