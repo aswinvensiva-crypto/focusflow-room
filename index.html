@@ -2,85 +2,164 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Supabase Browser Demo</title>
+  <title>Supabase Hotel App</title>
 
-  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-  </style>
 </head>
 <body>
 
-  <h1>Supabase Data Viewer</h1>
+  <h1>Welcome to Hotel Manager</h1>
 
-  <button id="btnFetchRooms">Fetch Rooms</button>
-  <button id="btnFetchCustomers">Fetch Customers</button>
-  <button id="btnFetchBookings">Fetch Bookings</button>
+  <div id="auth-section">
+    <h2>Login / Signup</h2>
 
-  <pre id="output"></pre>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="btnLogin">Login</button>
+    <button id="btnSignup">Signup</button>
+
+    <p id="auth-message"></p>
+    <hr>
+  </div>
+
+  <div id="content" style="display:none;">
+    <button id="btnLogout">Logout</button>
+
+    <h2>Rooms</h2>
+    <table id="rooms-table" border="1"></table>
+
+    <h3>Add Room</h3>
+    <input id="room_number" placeholder="Room Number">
+    <input id="room_name" placeholder="Room Name">
+    <input id="price_per_day" placeholder="Price Per Day">
+    <input id="category" placeholder="Category">
+    <input id="capacity" placeholder="Capacity">
+    <button id="btnAddRoom">Add Room</button>
+
+    <hr>
+
+    <h2>Bookings</h2>
+    <table id="bookings-table" border="1"></table>
+
+    <h3>Add Booking</h3>
+    <select id="booking-room"></select>
+    <input id="check_in_date" type="date">
+    <input id="check_out_date" type="date">
+    <button id="btnAddBooking">Add Booking</button>
+  </div>
 
   <script>
-    // 1) Paste your Supabase credentials here
+
+    // 1) Supabase client
     const SUPABASE_URL = "https://delkooaxroutckwvxfbe.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlbGtvb2F4cm91dGNrd3Z4ZmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1ODcxNzMsImV4cCI6MjA3NjE2MzE3M30.3upU-B8uVds1N3N0dl_EoZgo0SYyq3hxeRwGCDZWpho";
-
-    // 2) Create the Supabase client
     const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Output area
-    const output = document.getElementById("output");
+    // UI refs
+    const authMsg = document.getElementById("auth-message");
+    const contentDiv = document.getElementById("content");
 
-    // Helper to print results
-    function showResult(label, data) {
-      output.innerText = `${label}:\n\n` + JSON.stringify(data, null, 2);
+    const roomsTable = document.getElementById("rooms-table");
+    const bookingsTable = document.getElementById("bookings-table");
+    const bookingRoomSelect = document.getElementById("booking-room");
+
+    // Auth
+    document.getElementById("btnLogin").onclick = login;
+    document.getElementById("btnSignup").onclick = signup;
+    document.getElementById("btnLogout").onclick = logout;
+
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if(error) authMsg.innerText = error.message;
+      else onLogin();
     }
 
-    // Fetch Rooms
-    document.getElementById("btnFetchRooms")
-      .addEventListener("click", async () => {
-        const { data, error } = await supabase
-          .from("rooms")
-          .select("*");
+    async function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-        if (error) {
-          showResult("Rooms Error", error.message);
-        } else {
-          showResult("Rooms Data", data);
-        }
+      const { error } = await supabase.auth.signUp({ email, password });
+
+      if(error) authMsg.innerText = error.message;
+      else authMsg.innerText = "Signup successful — check your email!";
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      location.reload();
+    }
+
+    function onLogin() {
+      authMsg.innerText = "";
+      document.getElementById("auth-section").style.display="none";
+      contentDiv.style.display="block";
+      refreshRooms();
+      refreshBookings();
+    }
+
+    // Refresh rooms table
+    async function refreshRooms() {
+      const { data } = await supabase.from("rooms").select("*");
+      roomsTable.innerHTML = "<tr><th>Room #</th><th>Name</th><th>Price</th><th>Category</th><th>Capacity</th></tr>";
+
+      bookingRoomSelect.innerHTML = '<option value="">Choose room</option>';
+
+      data.forEach(r => {
+        const row = `<tr>
+          <td>${r.room_number}</td>
+          <td>${r.room_name}</td>
+          <td>${r.price_per_day}</td>
+          <td>${r.category}</td>
+          <td>${r.capacity}</td>
+        </tr>`;
+        roomsTable.innerHTML += row;
+        bookingRoomSelect.innerHTML += `<option value="${r.id}">${r.room_number} - ${r.room_name}</option>`;
       });
+    }
 
-    // Fetch Customers
-    document.getElementById("btnFetchCustomers")
-      .addEventListener("click", async () => {
-        const { data, error } = await supabase
-          .from("customers")
-          .select("*");
+    // Add room
+    document.getElementById("btnAddRoom").onclick = async () => {
+      const room_number = document.getElementById("room_number").value;
+      const room_name = document.getElementById("room_name").value;
+      const price_per_day = document.getElementById("price_per_day").value;
+      const category = document.getElementById("category").value;
+      const capacity = document.getElementById("capacity").value;
 
-        if (error) {
-          showResult("Customers Error", error.message);
-        } else {
-          showResult("Customers Data", data);
-        }
+      await supabase.from("rooms").insert({ room_number, room_name, price_per_day, category, capacity });
+      refreshRooms();
+    }
+
+    // Refresh bookings
+    async function refreshBookings() {
+      const { data } = await supabase.from("bookings").select("*");
+      bookingsTable.innerHTML = "<tr><th>Room</th><th>Check In</th><th>Check Out</th></tr>";
+      data.forEach(b => {
+        bookingsTable.innerHTML += `<tr><td>${b.room_id}</td><td>${b.check_in_date}</td><td>${b.check_out_date}</td></tr>`;
       });
+    }
 
-    // Fetch Bookings
-    document.getElementById("btnFetchBookings")
-      .addEventListener("click", async () => {
-        const { data, error } = await supabase
-          .from("bookings")
-          .select("*");
+    // Add booking
+    document.getElementById("btnAddBooking").onclick = async () => {
+      const room_id = bookingRoomSelect.value;
+      const check_in_date = document.getElementById("check_in_date").value;
+      const check_out_date = document.getElementById("check_out_date").value;
 
-        if (error) {
-          showResult("Bookings Error", error.message);
-        } else {
-          showResult("Bookings Data", data);
-        }
-      });
+      await supabase.from("bookings").insert({ room_id, check_in_date, check_out_date });
+      refreshBookings();
+    }
+
+    // Auto login if user already
+    supabase.auth.onAuthStateChange((event, session) => {
+      if(session) onLogin();
+    });
+
   </script>
+
 </body>
 </html>
