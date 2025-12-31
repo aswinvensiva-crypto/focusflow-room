@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,7 +140,6 @@ export default function NewBooking() {
       }
 
       const { error } = await supabase.from("bookings").insert({
-        user_id: user.id,
         customer_id: customerId,
         room_id: formData.roomId,
         check_in_date: formData.checkInDate,
