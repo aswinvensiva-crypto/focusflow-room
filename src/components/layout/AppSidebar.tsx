@@ -1,6 +1,6 @@
 import { Home, CalendarDays, Building2, Users, LogOut, Receipt, Sparkles } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
