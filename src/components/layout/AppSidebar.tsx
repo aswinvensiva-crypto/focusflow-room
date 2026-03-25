@@ -94,7 +94,7 @@ export function AppSidebar() {
               {open && (
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="font-medium text-sm text-sidebar-foreground truncate">{user?.email}</span>
-                  <span className="text-xs text-primary">Administrator</span>
+                  <span className="text-xs text-primary">{isAdmin ? "Administrator" : "Staff"}</span>
                 </div>
               )}
               <Button
