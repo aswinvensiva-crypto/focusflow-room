@@ -1,4 +1,4 @@
-import { Home, CalendarDays, Building2, Users, LogOut, Receipt, Sparkles } from "lucide-react";
+import { Home, CalendarDays, Building2, Users, LogOut, Receipt, Sparkles, ShieldCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
