@@ -65,6 +65,7 @@ export default function App() {
                 <Route path="/rooms" element={<Rooms />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/expenses" element={<Expenses />} />
+                <Route path="/users" element={<UserManagement />} />
               </Route>
 
               {/* Catch all */}

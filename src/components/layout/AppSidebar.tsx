@@ -22,6 +22,7 @@ const menuItems = [
   { title: "Rooms", url: "/rooms", icon: Building2 },
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Expenses", url: "/expenses", icon: Receipt },
+  { title: "User Management", url: "/users", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
