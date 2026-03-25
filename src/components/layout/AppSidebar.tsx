@@ -1,6 +1,7 @@
 import { Home, CalendarDays, Building2, Users, LogOut, Receipt, Sparkles, ShieldCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,13 +17,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
-const menuItems = [
+const baseMenuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Calendar", url: "/calendar", icon: CalendarDays },
   { title: "Rooms", url: "/rooms", icon: Building2 },
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Expenses", url: "/expenses", icon: Receipt },
-  { title: "User Management", url: "/users", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
