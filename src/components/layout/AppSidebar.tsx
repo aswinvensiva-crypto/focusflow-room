@@ -1,6 +1,7 @@
 import { Home, CalendarDays, Building2, Users, LogOut, Receipt, Sparkles, ShieldCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,18 +17,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
-const menuItems = [
+const baseMenuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Calendar", url: "/calendar", icon: CalendarDays },
   { title: "Rooms", url: "/rooms", icon: Building2 },
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Expenses", url: "/expenses", icon: Receipt },
-  { title: "User Management", url: "/users", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
   const { open } = useSidebar();
   const { signOut, user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        setIsAdmin(data?.some((r) => r.role === "admin") ?? false);
+      });
+  }, [user]);
+
+  const menuItems = [
+    ...baseMenuItems,
+    ...(isAdmin ? [{ title: "User Management", url: "/users", icon: ShieldCheck }] : []),
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/30 bg-sidebar-background/80 backdrop-blur-xl">
@@ -77,7 +94,7 @@ export function AppSidebar() {
               {open && (
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="font-medium text-sm text-sidebar-foreground truncate">{user?.email}</span>
-                  <span className="text-xs text-primary">Administrator</span>
+                  <span className="text-xs text-primary">{isAdmin ? "Administrator" : "Staff"}</span>
                 </div>
               )}
               <Button

@@ -17,6 +17,7 @@ import Rooms from "@/pages/Rooms";
 import Customers from "@/pages/Customers";
 import Expenses from "@/pages/Expenses";
 import UserManagement from "@/pages/UserManagement";
+import RequireAdmin from "@/components/RequireAdmin";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,7 +66,7 @@ export default function App() {
                 <Route path="/rooms" element={<Rooms />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/expenses" element={<Expenses />} />
-                <Route path="/users" element={<UserManagement />} />
+                <Route path="/users" element={<RequireAdmin><UserManagement /></RequireAdmin>} />
               </Route>
 
               {/* Catch all */}
