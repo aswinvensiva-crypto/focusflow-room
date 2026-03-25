@@ -17,6 +17,7 @@ import Rooms from "@/pages/Rooms";
 import Customers from "@/pages/Customers";
 import Expenses from "@/pages/Expenses";
 import UserManagement from "@/pages/UserManagement";
+import RequireAdmin from "@/components/RequireAdmin";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
