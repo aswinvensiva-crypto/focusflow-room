@@ -28,6 +28,23 @@ const baseMenuItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const { signOut, user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        setIsAdmin(data?.some((r) => r.role === "admin") ?? false);
+      });
+  }, [user]);
+
+  const menuItems = [
+    ...baseMenuItems,
+    ...(isAdmin ? [{ title: "User Management", url: "/users", icon: ShieldCheck }] : []),
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/30 bg-sidebar-background/80 backdrop-blur-xl">
