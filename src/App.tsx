@@ -16,6 +16,7 @@ import Calendar from "@/pages/Calendar";
 import Rooms from "@/pages/Rooms";
 import Customers from "@/pages/Customers";
 import Expenses from "@/pages/Expenses";
+import UserManagement from "@/pages/UserManagement";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ export default function App() {
                 <Route path="/rooms" element={<Rooms />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/expenses" element={<Expenses />} />
+                <Route path="/users" element={<UserManagement />} />
               </Route>
 
               {/* Catch all */}
