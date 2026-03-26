@@ -343,7 +343,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-6 stagger-children">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 stagger-children">
         <Card className="stat-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
