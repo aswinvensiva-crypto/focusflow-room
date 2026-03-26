@@ -389,6 +389,7 @@ export default function Rooms() {
                         </div>
                       )}
                     </div>
+                    {isAdmin && (
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -409,6 +410,7 @@ export default function Rooms() {
                         Delete
                       </Button>
                     </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

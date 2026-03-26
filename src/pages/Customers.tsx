@@ -295,6 +295,7 @@ export default function Customers() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
+                        {isAdmin && (
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
@@ -313,6 +314,7 @@ export default function Customers() {
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
