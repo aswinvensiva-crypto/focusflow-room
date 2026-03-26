@@ -220,6 +220,7 @@ export default function Rooms() {
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Rooms Management</h2>
+        {isAdmin && (
         <Dialog open={open} onOpenChange={(val) => { setOpen(val); if (!val) resetForm(); }}>
           <DialogTrigger asChild>
             <Button>
