@@ -28,6 +28,7 @@ export default function Rooms() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [roomRevenueMap, setRoomRevenueMap] = useState<Record<string, { revenue: number; monthlyData: { month: string; revenue: number }[] }>>({});
   const [formData, setFormData] = useState({
     roomNumber: "",

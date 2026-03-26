@@ -27,6 +27,7 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
