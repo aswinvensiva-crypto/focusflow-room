@@ -331,6 +331,7 @@ export default function Rooms() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {roomCategories.map((category) => {
