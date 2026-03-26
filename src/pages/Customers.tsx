@@ -151,6 +151,7 @@ export default function Customers() {
           <h2 className="font-display text-4xl font-bold tracking-tight text-gradient">Customers</h2>
           <p className="text-muted-foreground mt-1">Manage your guest database</p>
         </div>
+        {isAdmin && (
         <Dialog
           open={open}
           onOpenChange={(val) => {
@@ -232,6 +233,7 @@ export default function Customers() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card className="stat-card">
