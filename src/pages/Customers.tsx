@@ -27,6 +27,7 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -37,6 +38,12 @@ export default function Customers() {
   // Fetch all customers when component mounts
   useEffect(() => {
     fetchCustomers();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin")
+          .then(({ data }) => setIsAdmin((data?.length ?? 0) > 0));
+      }
+    });
   }, []);
 
   const fetchCustomers = async () => {
@@ -144,6 +151,7 @@ export default function Customers() {
           <h2 className="font-display text-4xl font-bold tracking-tight text-gradient">Customers</h2>
           <p className="text-muted-foreground mt-1">Manage your guest database</p>
         </div>
+        {isAdmin && (
         <Dialog
           open={open}
           onOpenChange={(val) => {
@@ -225,6 +233,7 @@ export default function Customers() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card className="stat-card">
@@ -286,6 +295,7 @@ export default function Customers() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
+                        {isAdmin && (
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
@@ -304,6 +314,7 @@ export default function Customers() {
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

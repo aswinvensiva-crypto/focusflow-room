@@ -28,6 +28,7 @@ export default function Rooms() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [roomRevenueMap, setRoomRevenueMap] = useState<Record<string, { revenue: number; monthlyData: { month: string; revenue: number }[] }>>({});
   const [formData, setFormData] = useState({
     roomNumber: "",
@@ -60,6 +61,12 @@ export default function Rooms() {
   useEffect(() => {
     fetchRooms();
     fetchRoomRevenue();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin")
+          .then(({ data }) => setIsAdmin((data?.length ?? 0) > 0));
+      }
+    });
   }, []);
 
   const fetchRooms = async () => {
@@ -213,6 +220,7 @@ export default function Rooms() {
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Rooms Management</h2>
+        {isAdmin && (
         <Dialog open={open} onOpenChange={(val) => { setOpen(val); if (!val) resetForm(); }}>
           <DialogTrigger asChild>
             <Button>
@@ -323,6 +331,7 @@ export default function Rooms() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {roomCategories.map((category) => {
@@ -380,6 +389,7 @@ export default function Rooms() {
                         </div>
                       )}
                     </div>
+                    {isAdmin && (
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -400,6 +410,7 @@ export default function Rooms() {
                         Delete
                       </Button>
                     </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
