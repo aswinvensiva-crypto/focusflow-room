@@ -38,6 +38,12 @@ export default function Customers() {
   // Fetch all customers when component mounts
   useEffect(() => {
     fetchCustomers();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin")
+          .then(({ data }) => setIsAdmin((data?.length ?? 0) > 0));
+      }
+    });
   }, []);
 
   const fetchCustomers = async () => {
