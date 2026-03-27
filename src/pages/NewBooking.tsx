@@ -493,6 +493,17 @@ export default function NewBooking() {
           </CardContent>
         </Card>
       </form>
+
+      {receiptData && (
+        <BookingReceipt
+          open={receiptOpen}
+          onClose={() => {
+            setReceiptOpen(false);
+            navigate("/");
+          }}
+          data={receiptData}
+        />
+      )}
     </div>
   );
 }
