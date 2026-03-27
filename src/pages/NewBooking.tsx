@@ -30,6 +30,8 @@ export default function NewBooking() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [newCustomer, setNewCustomer] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     customerId: "",
