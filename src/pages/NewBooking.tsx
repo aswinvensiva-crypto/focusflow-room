@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import BookingReceipt from "@/components/bookings/BookingReceipt";
 
 export default function NewBooking() {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ export default function NewBooking() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [newCustomer, setNewCustomer] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     customerId: "",
@@ -157,8 +160,40 @@ export default function NewBooking() {
 
       if (error) throw error;
 
+      // Get customer info for receipt
+      let custName = formData.customerName;
+      let custPhone = formData.customerPhone;
+      if (!newCustomer) {
+        const cust = customers.find((c) => String(c.id) === customerId);
+        custName = cust?.name || "";
+        custPhone = cust?.phone || "";
+      }
+
+      const room = rooms.find((r) => String(r.id) === formData.roomId);
+
+      setReceiptData({
+        customerName: custName,
+        customerPhone: custPhone,
+        roomNumber: room?.room_number || "",
+        roomName: room?.room_name || "",
+        roomCategory: room?.room_category || "",
+        checkInDate: formData.checkInDate,
+        checkOutDate: formData.checkOutDate,
+        totalDays: days,
+        pricePerDay: room?.price_per_day || 0,
+        baseAmount,
+        taxPercentage: Number(formData.taxPercentage),
+        taxAmount,
+        totalAmount,
+        advancePaid: Number(formData.advancePaid),
+        pendingAmount,
+        bookingStatus: formData.bookingStatus,
+        notes: formData.notes,
+        bookingId: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      });
+      setReceiptOpen(true);
       toast.success("Booking created successfully");
-      navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Failed to create booking");
     } finally {
@@ -458,6 +493,17 @@ export default function NewBooking() {
           </CardContent>
         </Card>
       </form>
+
+      {receiptData && (
+        <BookingReceipt
+          open={receiptOpen}
+          onClose={() => {
+            setReceiptOpen(false);
+            navigate("/");
+          }}
+          data={receiptData}
+        />
+      )}
     </div>
   );
 }
