@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import BookingReceipt from "@/components/bookings/BookingReceipt";
 
 export default function NewBooking() {
   const navigate = useNavigate();
