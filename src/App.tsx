@@ -1,12 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
@@ -22,12 +25,34 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-/* ---------------- Auth Guard ---------------- */
-
 function RequireAuth() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
+  const [checking, setChecking] = useState(true);
+  const [blocked, setBlocked] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      setChecking(false);
+      return;
+    }
+    setChecking(true);
+    supabase
+      .from("blocked_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(async ({ data }) => {
+        if (data) {
+          setBlocked(true);
+          toast.error("Your access has been restricted by an administrator.");
+          await signOut();
+        }
+        setChecking(false);
+      });
+  }, [user, loading]);
+
+  if (loading || checking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         Loading...
@@ -35,14 +60,12 @@ function RequireAuth() {
     );
   }
 
-  if (!user) {
+  if (!user || blocked) {
     return <Navigate to="/auth" replace />;
   }
 
   return <MainLayout />;
 }
-
-/* ---------------- App ---------------- */
 
 export default function App() {
   return (
@@ -54,10 +77,8 @@ export default function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public */}
               <Route path="/auth" element={<Auth />} />
 
-              {/* Protected */}
               <Route element={<RequireAuth />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/bookings/new" element={<NewBooking />} />
@@ -69,7 +90,6 @@ export default function App() {
                 <Route path="/users" element={<RequireAdmin><UserManagement /></RequireAdmin>} />
               </Route>
 
-              {/* Catch all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
