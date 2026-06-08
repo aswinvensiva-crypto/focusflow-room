@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Shield, ShieldCheck, UserPlus, X, Ban, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -20,15 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UserWithRoles {
   id: string;
   email: string;
   created_at: string;
   roles: string[];
+  blocked: boolean;
 }
 
 export default function UserManagement() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState<string | null>(null);
@@ -88,6 +91,33 @@ export default function UserManagement() {
     }
   };
 
+  const toggleBlock = async (userId: string, currentlyBlocked: boolean) => {
+    if (userId === currentUser?.id) {
+      toast.error("You cannot block your own account");
+      return;
+    }
+    try {
+      if (currentlyBlocked) {
+        const { error } = await supabase
+          .from("blocked_users")
+          .delete()
+          .eq("user_id", userId);
+        if (error) throw error;
+        toast.success("User access restored");
+      } else {
+        const { error } = await supabase
+          .from("blocked_users")
+          .insert({ user_id: userId, blocked_by: currentUser?.id });
+        if (error) throw error;
+        toast.success("User has been restricted");
+      }
+      fetchUsers();
+    } catch (error: any) {
+      toast.error("Failed to update user access");
+      console.error(error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -109,12 +139,13 @@ export default function UserManagement() {
             Users & Roles
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Roles</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -122,13 +153,13 @@ export default function UserManagement() {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No users found
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className={user.blocked ? "opacity-60" : ""}>
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>
                       <div className="flex gap-1.5 flex-wrap">
@@ -154,6 +185,19 @@ export default function UserManagement() {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      {user.blocked ? (
+                        <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                          <Ban className="h-3 w-3" />
+                          Restricted
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                          <CheckCircle2 className="h-3 w-3 text-success" />
+                          Active
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
@@ -177,17 +221,38 @@ export default function UserManagement() {
                           </Button>
                         </div>
                       ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setAssigning(user.id);
-                            setSelectedRole("staff");
-                          }}
-                        >
-                          <UserPlus className="h-4 w-4 mr-1" />
-                          Add Role
-                        </Button>
+                        <div className="flex items-center gap-2 justify-end flex-wrap">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setAssigning(user.id);
+                              setSelectedRole("staff");
+                            }}
+                          >
+                            <UserPlus className="h-4 w-4 mr-1" />
+                            Add Role
+                          </Button>
+                          {user.id !== currentUser?.id && (
+                            <Button
+                              size="sm"
+                              variant={user.blocked ? "outline" : "destructive"}
+                              onClick={() => toggleBlock(user.id, user.blocked)}
+                            >
+                              {user.blocked ? (
+                                <>
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                                  Unblock
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="h-4 w-4 mr-1" />
+                                  Block
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -200,3 +265,4 @@ export default function UserManagement() {
     </div>
   );
 }
+

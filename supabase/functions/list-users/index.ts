@@ -48,11 +48,16 @@ Deno.serve(async (req) => {
     // Get all roles
     const { data: roles } = await adminClient.from("user_roles").select("*");
 
+    // Get blocked users
+    const { data: blocked } = await adminClient.from("blocked_users").select("user_id");
+    const blockedSet = new Set((blocked || []).map((b) => b.user_id));
+
     const result = users.map((u) => ({
       id: u.id,
       email: u.email,
       created_at: u.created_at,
       roles: (roles || []).filter((r) => r.user_id === u.id).map((r) => r.role),
+      blocked: blockedSet.has(u.id),
     }));
 
     return new Response(JSON.stringify(result), {

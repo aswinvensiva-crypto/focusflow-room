@@ -21,15 +21,15 @@ export function MainLayout() {
 
         <AppSidebar />
 
-        <main className="flex-1 flex flex-col relative z-10">
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border/30 bg-background/60 backdrop-blur-xl px-6">
+        <main className="flex-1 flex flex-col relative z-10 min-w-0 overflow-x-hidden">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/30 bg-background/60 backdrop-blur-xl px-3 md:px-6">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
-            <h1 className="font-display text-xl font-semibold tracking-tight text-iridescent">
+            <h1 className="font-display text-base md:text-xl font-semibold tracking-tight text-iridescent truncate">
               HOTEL MANAGER
             </h1>
           </header>
 
-          <div className="flex-1 p-8 animate-fade-in">
+          <div className="flex-1 p-3 md:p-5 lg:p-6 animate-fade-in min-w-0">
             <Outlet />
           </div>
         </main>
